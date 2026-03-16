@@ -21,7 +21,7 @@ A personal, local-only web app to compare Letterboxd watchlists across friends a
 ### 1. Clone the repo
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/compare-letterboxd-watchlists
+git clone https://github.com/dsw-williams/compare-letterboxd-watchlists
 cd compare-letterboxd-watchlists
 ```
 
