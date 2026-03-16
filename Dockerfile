@@ -19,7 +19,6 @@ RUN pip3 install --break-system-packages -r requirements.txt
 
 COPY --from=builder /app/.next/standalone ./
 COPY --from=builder /app/.next/static ./.next/static
-COPY --from=builder /app/public ./public
 COPY scripts/ ./scripts/
 
 RUN mkdir -p /app/data
