@@ -34,10 +34,8 @@ export async function POST(req: NextRequest) {
         send({ step: 'profile', message: 'Fetching profile...' });
         const profile = await fetchProfileInfo(username);
 
-        send({ step: 'watched', message: 'Scraping watched films (page 1 of ?)...' });
-        const watched = await fetchAllWatched(username, (page) => {
-          send({ step: 'watched', message: `Scraping watched films (page ${page} of ?)...` });
-        });
+        send({ step: 'watched', message: 'Scraping watched films...' });
+        const watched = await fetchAllWatched(username);
 
         send({ step: 'watchlist', message: 'Scraping watchlist...' });
         const watchlist = await fetchWatchlist(username);

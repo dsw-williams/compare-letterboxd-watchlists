@@ -1,5 +1,7 @@
+.git
+.gitignore
+.env.local
 node_modules
 .next
-.git
-data/
-.env*.local
+data
+README.md

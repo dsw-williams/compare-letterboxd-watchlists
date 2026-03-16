@@ -12,11 +12,12 @@ A personal, local-only web app to compare Letterboxd watchlists across friends a
 ## Requirements
 
 - [Node.js](https://nodejs.org/) 18 or later
+- [Python](https://www.python.org/) 3.10 or later
 - macOS, Linux, or Windows (WSL recommended on Windows)
 
 ---
 
-## Setup
+## Local Setup
 
 ### 1. Clone the repo
 
@@ -29,9 +30,13 @@ cd compare-letterboxd-watchlists
 
 ```bash
 npm install
+pip3 install -r requirements.txt
 ```
 
-This also installs the Chromium browser required for scraping (via a `postinstall` script).
+> **macOS note:** If your system Python is older than 3.10, install a newer version (e.g. via Homebrew: `brew install python3`) and set the `PYTHON_EXECUTABLE` env var in `.env.local`:
+> ```
+> PYTHON_EXECUTABLE=python3.14
+> ```
 
 ### 3. Start the app
 
@@ -43,6 +48,47 @@ Open [http://localhost:3000](http://localhost:3000)
 
 ---
 
+## Docker
+
+### Run with Docker
+
+```bash
+docker run -d \
+  -p 3000:3000 \
+  -v $(pwd)/data:/app/data \
+  --name watchlist \
+  dswwilliams/compare-letterboxd-watchlists
+```
+
+Open [http://localhost:3000](http://localhost:3000)
+
+### Build the image yourself
+
+```bash
+docker build -t compare-letterboxd-watchlists .
+docker run -d \
+  -p 3000:3000 \
+  -v $(pwd)/data:/app/data \
+  --name watchlist \
+  compare-letterboxd-watchlists
+```
+
+### Docker Compose
+
+```yaml
+services:
+  watchlist:
+    image: dswwilliams/compare-letterboxd-watchlists
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./data:/app/data
+    restart: unless-stopped
+```
+
+> Data is persisted in the mounted `data/` volume. All friend data, watched films, and settings are stored there.
+
+---
 
 ## Usage
 
