@@ -1,0 +1,35 @@
+import type { Metadata } from 'next';
+import { Inter, Outfit } from 'next/font/google';
+import './globals.css';
+import Nav from '@/components/Nav';
+
+const inter = Inter({
+  subsets: ['latin'],
+  weight: ['400', '500', '600', '700'],
+  variable: '--font-body',
+  display: 'swap',
+});
+
+const outfit = Outfit({
+  subsets: ['latin'],
+  weight: ['800', '900'],
+  variable: '--font-display',
+  display: 'swap',
+});
+
+export const metadata: Metadata = {
+  title: 'Watchlist',
+  description: 'Compare Letterboxd watchlists with friends',
+  viewport: 'width=device-width, initial-scale=1',
+};
+
+export default function RootLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <html lang="en" className={`${inter.variable} ${outfit.variable}`}>
+      <body style={{ backgroundColor: '#141414', minHeight: '100vh' }}>
+        <Nav />
+        <main>{children}</main>
+      </body>
+    </html>
+  );
+}

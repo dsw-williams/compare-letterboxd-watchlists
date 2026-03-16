@@ -1,0 +1,113 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bg-primary: #141414;
+  --bg-card: #1e2128;
+  --bg-card-hover: #252830;
+  --border: #2a2d35;
+  --text-primary: #ffffff;
+  --text-secondary: #9ba3af;
+  --text-tertiary: #6b7280;
+  --accent-green: #00c030;
+  --accent-green-hover: #00a828;
+  --accent-orange: #f97316;
+  --star-yellow: #f59e0b;
+}
+
+html, body {
+  background-color: #141414;
+  color: #ffffff;
+  font-family: var(--font-body), 'Graphik', system-ui, sans-serif;
+  font-size: 15px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #141414;
+}
+::-webkit-scrollbar-thumb {
+  background: #2a2d35;
+  border-radius: 3px;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+/* Remove tap highlight on all interactive elements */
+button, a, [role="button"] {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* ── Mobile responsive ───────────────────────────────────── */
+@media (max-width: 640px) {
+  /* Tighter page padding */
+  .page-container {
+    padding: 20px 16px !important;
+  }
+
+  /* Nav inner padding */
+  .nav-inner {
+    padding: 0 16px !important;
+  }
+
+  /* Results header: stack count + controls vertically */
+  .results-header {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 10px !important;
+  }
+
+  /* Sort + fade controls: allow wrap, full width */
+  .results-controls {
+    width: 100%;
+    flex-wrap: wrap !important;
+    gap: 8px !important;
+  }
+
+  /* Movie grid: allow slightly narrower cards on small screens */
+  .movie-grid {
+    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)) !important;
+    gap: 10px !important;
+  }
+
+  /* Settings: stack TMDB form vertically */
+  .tmdb-form {
+    flex-direction: column !important;
+  }
+  .tmdb-form input {
+    width: 100% !important;
+  }
+  .tmdb-form button {
+    width: 100% !important;
+    height: 44px !important;
+  }
+
+  /* Bigger touch targets for icon buttons */
+  .icon-btn {
+    width: 44px !important;
+    height: 44px !important;
+  }
+
+  /* Friend card: reduce padding */
+  .friend-card {
+    padding: 14px 16px !important;
+  }
+
+  /* Section label spacing */
+  .section-with-label {
+    margin-bottom: 24px !important;
+  }
+}
