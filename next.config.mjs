@@ -1,8 +1,7 @@
 
 
 const nextConfig = {
-  output: 'standalone',
-  images: {
+images: {
     domains: ['image.tmdb.org', 'a.ltrbxd.com', 'secure.gravatar.com'],
   },
   experimental: {
