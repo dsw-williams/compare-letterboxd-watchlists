@@ -31,15 +31,9 @@ cd compare-letterboxd-watchlists
 npm install
 ```
 
-### 3. Install the Playwright browser
+This also installs the Chromium browser required for scraping (via a `postinstall` script).
 
-This is required for scraping watched films from Letterboxd.
-
-```bash
-npx playwright install chromium
-```
-
-### 4. Start the app
+### 3. Start the app
 
 ```bash
 npm run dev
