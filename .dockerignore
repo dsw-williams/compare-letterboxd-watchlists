@@ -1,0 +1,9 @@
+node_modules
+.next
+data
+.git
+.env*
+*.log
+.DS_Store
+tsconfig.tsbuildinfo
+CLAUDE.md

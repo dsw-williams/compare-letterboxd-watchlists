@@ -6,3 +6,4 @@ node_modules/
 .next/
 .claude/
 tsconfig.tsbuildinfo
+CLAUDE.md
