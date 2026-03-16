@@ -18,9 +18,20 @@ const outfit = Outfit({
 });
 
 export const metadata: Metadata = {
-  title: 'Watchlist',
-  description: 'Compare Letterboxd watchlists with friends',
-  viewport: 'width=device-width, initial-scale=1',
+  title: 'Watchlist — Compare Letterboxd watchlists',
+  description: 'Select friends to compare watchlists.',
+  openGraph: {
+    title: 'Watchlist — Compare Letterboxd watchlists',
+    description: 'Select friends to compare watchlists.',
+    type: 'website',
+    images: [{ url: '/og-image.png', width: 1200, height: 630 }],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Watchlist — Compare Letterboxd watchlists',
+    description: 'Select friends to compare watchlists.',
+    images: ['/og-image.png'],
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

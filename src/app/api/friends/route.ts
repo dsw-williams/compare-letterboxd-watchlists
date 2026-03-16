@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getFriends, getFriend, upsertFriend } from '@/lib/storage';
 import { fetchProfileInfo, fetchAllWatched, fetchWatchlist } from '@/lib/letterboxd';
-import { enrichMovies } from '@/lib/tmdb';
+import { enrichAndSaveFriend } from '@/lib/tmdb';
 import { getSettings } from '@/lib/storage';
 
 export async function GET() {
@@ -41,26 +41,25 @@ export async function POST(req: NextRequest) {
         const watchlist = await fetchWatchlist(username);
 
         const settings = await getSettings();
-        let enrichedWatchlist = watchlist;
-
-        if (settings.tmdb_api_key) {
-          send({ step: 'tmdb', message: 'Enriching with TMDB...' });
-          enrichedWatchlist = await enrichMovies(watchlist, settings.tmdb_api_key);
-        }
 
         const friend = {
           username,
           avatar_url: profile.avatar_url,
-          watchlist: enrichedWatchlist,
+          watchlist,
           watched,
           last_synced: new Date().toISOString(),
+          tmdb_enriched: !settings.tmdb_api_key,
         };
 
         await upsertFriend(friend);
         send({ step: 'done' });
+        controller.close();
+
+        if (settings.tmdb_api_key) {
+          enrichAndSaveFriend(username, settings.tmdb_api_key).catch(console.error);
+        }
       } catch (err) {
         send({ step: 'error', message: err instanceof Error ? err.message : 'Unknown error' });
-      } finally {
         controller.close();
       }
     },

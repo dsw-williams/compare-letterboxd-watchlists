@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
 Letterboxd scraper using letterboxdpy.
-Usage: python3 letterboxd_scraper.py <command> <username>
-Commands: profile, watchlist, watched
+Usage: python3 letterboxd_scraper.py <command> <username> [slug]
+Commands: profile, watchlist, watched, list
 Output: JSON to stdout, errors to stderr
 """
 import sys
@@ -32,6 +32,23 @@ def cmd_watchlist(username):
     print(json.dumps(movies))
 
 
+def cmd_list(username, slug):
+    from letterboxdpy.list import List
+    lst = List(username, slug)
+    title = lst.get_title()
+    movies_data = lst.get_movies()
+    movies = [
+        {
+            'slug': film['slug'],
+            'title': film['name'],
+            'year': str(film['year']) if film.get('year') else '',
+        }
+        for film in movies_data.values()
+        if film.get('slug')
+    ]
+    print(json.dumps({'title': title, 'movies': movies}))
+
+
 def cmd_watched(username):
     from letterboxdpy.pages.user_films import UserFilms
     result = UserFilms(username).get_films()
@@ -49,11 +66,23 @@ def cmd_watched(username):
 
 def main():
     if len(sys.argv) < 3:
-        print(json.dumps({'error': 'Usage: letterboxd_scraper.py <command> <username>'}))
+        print(json.dumps({'error': 'Usage: letterboxd_scraper.py <command> <username> [slug]'}))
         sys.exit(1)
 
     command = sys.argv[1]
     username = sys.argv[2]
+
+    if command == 'list':
+        if len(sys.argv) < 4:
+            print(json.dumps({'error': 'Usage: letterboxd_scraper.py list <username> <slug>'}))
+            sys.exit(1)
+        slug = sys.argv[3]
+        try:
+            cmd_list(username, slug)
+        except Exception as e:
+            sys.stderr.write(str(e) + '\n')
+            sys.exit(1)
+        return
 
     commands = {
         'profile': cmd_profile,

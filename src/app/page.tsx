@@ -1,6 +1,6 @@
 'use client';
 import { useState, useEffect, useMemo } from 'react';
-import { Friend, Movie } from '@/lib/types';
+import { Friend, LetterboxdList, Movie } from '@/lib/types';
 import FriendSelector from '@/components/FriendSelector';
 import MovieGrid from '@/components/MovieGrid';
 
@@ -22,6 +22,8 @@ function SectionLabel({ label }: { label: string }) {
 export default function HomePage() {
   const [friends, setFriends] = useState<Friend[]>([]);
   const [selected, setSelected] = useState<string[]>([]);
+  const [lists, setLists] = useState<LetterboxdList[]>([]);
+  const [selectedLists, setSelectedLists] = useState<string[]>([]);
   const [overlap, setOverlap] = useState<OverlapEntry[]>([]);
   const [loading, setLoading] = useState(false);
   const [activeGenres, setActiveGenres] = useState<string[]>([]);
@@ -29,17 +31,21 @@ export default function HomePage() {
   const [sortOrder, setSortOrder] = useState<'random' | 'rating_desc' | 'rating_asc' | 'runtime_desc' | 'runtime_asc' | 'title'>('random');
   const [randomOrder, setRandomOrder] = useState<Map<string, number>>(new Map());
 
-  // Load friends on mount
+  const listMode = selectedLists.length > 0;
+
+  // Load friends and lists on mount
   useEffect(() => {
     fetch('/api/friends')
       .then((r) => r.json())
       .then((data: Friend[]) => {
         setFriends(data);
-        // Auto-select all if ≤4 friends
         if (data.length > 0 && data.length <= 4) {
           setSelected(data.map((f) => f.username));
         }
       });
+    fetch('/api/lists')
+      .then((r) => r.json())
+      .then((data: LetterboxdList[]) => setLists(data));
   }, []);
 
   // Randomise order once per data load
@@ -55,12 +61,38 @@ export default function HomePage() {
 
   // Build display entries whenever selection changes
   useEffect(() => {
+    // List mode: use list movies as the pool, friends determine grouping
+    if (listMode) {
+      const movieMap = new Map<string, Movie>();
+      for (const listId of selectedLists) {
+        const list = lists.find((l) => l.id === listId);
+        if (!list) continue;
+        for (const movie of list.movies) {
+          if (!movieMap.has(movie.slug) || (!movieMap.get(movie.slug)!.poster_url && movie.poster_url)) {
+            movieMap.set(movie.slug, movie);
+          }
+        }
+      }
+      const friendSlugs = new Map(
+        selected.map((username) => {
+          const friend = friends.find((f) => f.username === username);
+          return [username, new Set(friend?.watchlist.map((m) => m.slug) ?? [])];
+        })
+      );
+      const entries: OverlapEntry[] = Array.from(movieMap.values()).map((movie) => ({
+        movie,
+        friends: selected.filter((u) => friendSlugs.get(u)?.has(movie.slug)),
+      }));
+      setOverlap(entries);
+      return;
+    }
+
+    // Friend mode
     if (selected.length === 0) {
       setOverlap([]);
       return;
     }
     if (selected.length === 1) {
-      // Single friend — show their full watchlist directly from local data
       const friend = friends.find((f) => f.username === selected[0]);
       setOverlap(friend ? friend.watchlist.map((movie) => ({ movie, friends: [friend.username] })) : []);
       return;
@@ -70,11 +102,17 @@ export default function HomePage() {
       .then((r) => r.json())
       .then((data) => setOverlap(data))
       .finally(() => setLoading(false));
-  }, [selected, friends]);
+  }, [selected, friends, selectedLists, lists, listMode]);
 
   function toggleFriend(username: string) {
     setSelected((prev) =>
       prev.includes(username) ? prev.filter((u) => u !== username) : [...prev, username]
+    );
+  }
+
+  function toggleList(id: string) {
+    setSelectedLists((prev) =>
+      prev.includes(id) ? prev.filter((l) => l !== id) : [...prev, id]
     );
   }
 
@@ -113,22 +151,25 @@ export default function HomePage() {
     });
   }
 
-  // Group by overlap count for section headings (only when 2+ friends selected)
+  // Group by overlap count — always used in list mode, or when 2+ friends selected
   const groupedByCount = useMemo(() => {
-    if (selected.length < 2) return null;
+    if (!listMode && selected.length < 2) return null;
     const counts = Array.from(new Set(filtered.map(({ friends }) => friends.length))).sort((a, b) => b - a);
     return counts.map((count) => ({
       count,
       items: filtered.filter(({ friends }) => friends.length === count),
     }));
-  }, [filtered, selected.length]);
+  }, [filtered, selected.length, listMode]);
+
+  const hour = new Date().getHours();
+  const timeOfDay = hour < 12 ? 'this morning' : hour < 17 ? 'this afternoon' : hour < 20 ? 'this evening' : 'tonight';
 
   return (
     <div className="page-container" style={{ maxWidth: '1400px', margin: '0 auto', padding: '32px 24px' }}>
       {/* Page header */}
       <div style={{ marginBottom: '28px' }}>
         <h1 style={{ fontSize: '30px', fontWeight: 700, color: '#ffffff', marginBottom: '6px', lineHeight: 1.2 }}>
-          Who&apos;s watching tonight?
+          Who&apos;s watching {timeOfDay}?
         </h1>
         <p style={{ fontSize: '15px', color: '#9ba3af' }}>
           Select friends to compare watchlists.
@@ -136,7 +177,7 @@ export default function HomePage() {
       </div>
 
       {/* Friends selector */}
-      <div style={{ marginBottom: '20px' }}>
+      <div style={{ marginBottom: lists.length > 0 ? '12px' : '20px' }}>
         <FriendSelector
           friends={friends}
           selected={selected}
@@ -144,6 +185,49 @@ export default function HomePage() {
           onSelectAll={selectAll}
         />
       </div>
+
+      {/* Lists selector */}
+      {lists.length > 0 && (
+        <div style={{
+          backgroundColor: '#1e2128',
+          border: '1px solid #2a2d35',
+          borderRadius: '16px',
+          padding: '16px 20px',
+          marginBottom: '20px',
+        }}>
+          <div style={{ fontSize: '12px', fontWeight: 700, color: '#9ba3af', textTransform: 'uppercase', letterSpacing: '0.12em', marginBottom: '12px' }}>
+            Lists
+          </div>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+            {lists.map((list) => {
+              const isActive = selectedLists.includes(list.id);
+              return (
+                <button
+                  key={list.id}
+                  onClick={() => toggleList(list.id)}
+                  style={{
+                    padding: '5px 14px',
+                    borderRadius: '99px',
+                    fontSize: '13px',
+                    fontWeight: isActive ? 600 : 400,
+                    cursor: 'pointer',
+                    border: `1px solid ${isActive ? '#00c030' : '#2a2d35'}`,
+                    backgroundColor: isActive ? '#00c030' : 'transparent',
+                    color: isActive ? '#ffffff' : '#9ba3af',
+                    transition: 'all 0.15s',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                  }}
+                >
+                  <span>🎬</span>
+                  {list.name}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* Genre filter chips */}
       {genres.length > 1 && (
@@ -184,7 +268,7 @@ export default function HomePage() {
       )}
 
       {/* Results header */}
-      {selected.length >= 1 && (
+      {(selected.length >= 1 || listMode) && (
         <div className="results-header" style={{
           display: 'flex',
           alignItems: 'center',
@@ -195,9 +279,14 @@ export default function HomePage() {
             <span style={{ fontSize: '17px', fontWeight: 700, color: '#ffffff' }}>
               {filtered.length} films found
             </span>
-            {selected.length >= 2 && (
+            {!listMode && selected.length >= 2 && (
               <span style={{ fontSize: '15px', color: '#00c030', fontWeight: 600 }}>
                 {sharedCount} shared
+              </span>
+            )}
+            {listMode && selected.length >= 1 && (
+              <span style={{ fontSize: '15px', color: '#00c030', fontWeight: 600 }}>
+                {filtered.filter(({ friends }) => friends.length >= 1).length} on watchlists
               </span>
             )}
           </div>
@@ -314,32 +403,34 @@ export default function HomePage() {
         </div>
       )}
 
-      {/* Movie grid — single friend: one flat section */}
-      {!loading && selected.length === 1 && (
+      {/* Movie grid — single friend (no list mode): one flat section */}
+      {!loading && !listMode && selected.length === 1 && (
         <>
           <SectionLabel label={`${selected[0]}'s watchlist`} />
           <MovieGrid items={sortItems(filtered)} totalSelected={1} allFriends={friends} selectedFriends={selected} fadeWatched={fadeWatched} />
         </>
       )}
 
-      {/* Movie grid — multiple friends: grouped by overlap count */}
-      {!loading && selected.length >= 2 && groupedByCount && groupedByCount.map(({ count, items }) => (
+      {/* Movie grid — list mode or multiple friends: grouped by overlap count */}
+      {!loading && groupedByCount && groupedByCount.map(({ count, items }) => (
         <div key={count} className="section-with-label" style={{ marginBottom: '32px' }}>
           <SectionLabel label={
-            count === selected.length
+            count === 0
+              ? 'On no watchlists'
+              : count === selected.length
               ? `On all ${selected.length} watchlists`
               : count >= 2
               ? `On ${count} of ${selected.length} watchlists`
-              : `On 1 watchlist`
+              : 'On 1 watchlist'
           } />
           <MovieGrid items={sortItems(items)} totalSelected={selected.length} allFriends={friends} selectedFriends={selected} fadeWatched={fadeWatched} />
         </div>
       ))}
 
-      {/* Prompt to select a friend */}
-      {!loading && selected.length === 0 && friends.length > 0 && (
+      {/* Prompt to select a friend or list */}
+      {!loading && selected.length === 0 && !listMode && (friends.length > 0 || lists.length > 0) && (
         <div style={{ textAlign: 'center', padding: '60px 0', color: '#6b7280', fontSize: '14px' }}>
-          Select a friend to see their watchlist.
+          Select a friend or list to get started.
         </div>
       )}
     </div>

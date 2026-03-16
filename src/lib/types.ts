@@ -24,6 +24,17 @@ export interface Friend {
   watchlist: Movie[];
   watched: WatchedMovie[];
   last_synced: string | null;
+  tmdb_enriched: boolean;
+}
+
+export interface LetterboxdList {
+  id: string; // "{owner}/{slug}"
+  name: string;
+  owner: string;
+  slug: string;
+  movies: Movie[];
+  last_synced: string | null;
+  tmdb_enriched: boolean;
 }
 
 export interface Settings {

@@ -1,6 +1,6 @@
 'use client';
 import { useState, useEffect } from 'react';
-import { Friend } from '@/lib/types';
+import { Friend, LetterboxdList } from '@/lib/types';
 
 function timeAgo(isoString: string | null): string {
   if (!isoString) return 'never synced';
@@ -30,8 +30,19 @@ export default function SettingsPage() {
   const [tmdbSaved, setTmdbSaved] = useState(false);
   const [tmdbSaving, setTmdbSaving] = useState(false);
 
+  // Lists state
+  const [listUrl, setListUrl] = useState('');
+  const [lists, setLists] = useState<LetterboxdList[]>([]);
+  const [listLoading, setListLoading] = useState(false);
+  const [listProgress, setListProgress] = useState<ProgressStep[]>([]);
+  const [listError, setListError] = useState<string | null>(null);
+  const [listProgressDone, setListProgressDone] = useState(false);
+  const [deletingListId, setDeletingListId] = useState<string | null>(null);
+  const [syncingListId, setSyncingListId] = useState<string | null>(null);
+
   useEffect(() => {
     fetchFriends();
+    fetchLists();
     fetch('/api/settings')
       .then((r) => r.json())
       .then((s) => setTmdbKey(s.tmdb_api_key ?? ''));
@@ -41,6 +52,12 @@ export default function SettingsPage() {
     const res = await fetch('/api/friends');
     const data = await res.json();
     setFriends(data);
+  }
+
+  async function fetchLists() {
+    const res = await fetch('/api/lists');
+    const data = await res.json();
+    setLists(data);
   }
 
   async function handleImport(e: React.FormEvent) {
@@ -96,6 +113,82 @@ export default function SettingsPage() {
       setError(err instanceof Error ? err.message : 'Import failed');
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function handleImportList(e: React.FormEvent) {
+    e.preventDefault();
+    if (!listUrl.trim()) return;
+    setListLoading(true);
+    setListProgress([]);
+    setListError(null);
+    setListProgressDone(false);
+
+    try {
+      const res = await fetch('/api/lists', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url: listUrl.trim() }),
+      });
+
+      const reader = res.body?.getReader();
+      const decoder = new TextDecoder('utf-8', { fatal: false });
+
+      if (!reader) throw new Error('No response stream');
+
+      let buffer = '';
+      let done = false;
+      while (!done) {
+        const { value, done: streamDone } = await reader.read();
+        done = streamDone;
+        if (value) buffer += decoder.decode(value, { stream: true });
+
+        const lines = buffer.split('\n');
+        buffer = lines.pop() ?? '';
+        for (const line of lines.filter(Boolean)) {
+          try {
+            const data = JSON.parse(line);
+            if (data.step === 'error') {
+              setListError(data.message);
+            } else if (data.step === 'done') {
+              setListProgressDone(true);
+              setTimeout(() => setListProgress([]), 1800);
+              setListUrl('');
+              await fetchLists();
+            } else {
+              setListProgress((prev) => {
+                const filtered = prev.filter((p) => p.step !== data.step);
+                return [...filtered, { step: data.step, message: data.message }];
+              });
+            }
+          } catch {}
+        }
+      }
+    } catch (err) {
+      setListError(err instanceof Error ? err.message : 'Import failed');
+    } finally {
+      setListLoading(false);
+    }
+  }
+
+  async function handleSyncList(id: string) {
+    setSyncingListId(id);
+    try {
+      await fetch(`/api/lists/${id}`, { method: 'POST' });
+      await fetchLists();
+    } finally {
+      setSyncingListId(null);
+    }
+  }
+
+  async function handleDeleteList(id: string, name: string) {
+    if (!confirm(`Remove "${name}" from your lists?`)) return;
+    setDeletingListId(id);
+    try {
+      await fetch(`/api/lists/${id}`, { method: 'DELETE' });
+      await fetchLists();
+    } finally {
+      setDeletingListId(null);
     }
   }
 
@@ -324,8 +417,13 @@ export default function SettingsPage() {
                   {friend.watched.length} watched
                 </span>
               </div>
-              <div style={{ color: '#6b7280', fontSize: '12px', marginTop: '6px' }}>
+              <div style={{ color: '#6b7280', fontSize: '12px', marginTop: '6px', display: 'flex', alignItems: 'center', gap: '8px' }}>
                 synced {timeAgo(friend.last_synced)}
+                {!friend.tmdb_enriched && (
+                  <span style={{ fontSize: '11px', color: '#6b7280', backgroundColor: '#252830', border: '1px solid #2a2d35', borderRadius: '4px', padding: '1px 6px' }}>
+                    Enriching…
+                  </span>
+                )}
               </div>
             </div>
 
@@ -378,6 +476,215 @@ export default function SettingsPage() {
           </div>
         ))}
       </div>
+      {/* Import a list panel */}
+      <div style={{
+        backgroundColor: '#1e2128',
+        border: '1px solid #2a2d35',
+        borderRadius: '16px',
+        padding: '24px',
+        marginBottom: '24px',
+      }}>
+        <h2 style={{ fontSize: '17px', fontWeight: 700, color: '#ffffff', marginBottom: '8px' }}>
+          Import a list
+        </h2>
+        <p style={{ fontSize: '14px', color: '#9ba3af', marginBottom: '20px', lineHeight: 1.6 }}>
+          Paste a Letterboxd list URL, e.g. letterboxd.com/username/list/list-name/
+        </p>
+
+        <form onSubmit={handleImportList}>
+          <input
+            type="text"
+            value={listUrl}
+            onChange={(e) => setListUrl(e.target.value)}
+            placeholder="https://letterboxd.com/username/list/list-name/"
+            disabled={listLoading}
+            style={{
+              width: '100%',
+              backgroundColor: '#0d0f12',
+              border: '1px solid #2a2d35',
+              borderRadius: '8px',
+              height: '44px',
+              padding: '0 14px',
+              color: '#ffffff',
+              fontSize: '14px',
+              outline: 'none',
+              marginBottom: '12px',
+              boxSizing: 'border-box',
+            }}
+          />
+          <button
+            type="submit"
+            disabled={listLoading || !listUrl.trim()}
+            style={{
+              width: '100%',
+              height: '44px',
+              backgroundColor: listLoading || !listUrl.trim() ? '#005518' : '#00c030',
+              color: '#ffffff',
+              fontWeight: 700,
+              fontSize: '15px',
+              border: 'none',
+              borderRadius: '8px',
+              cursor: listLoading || !listUrl.trim() ? 'not-allowed' : 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '8px',
+              transition: 'background-color 0.15s',
+            }}
+          >
+            <span style={{ fontSize: '16px' }}>🎬</span>
+            {listLoading ? 'Importing...' : 'Import list'}
+          </button>
+        </form>
+
+        {listProgress.length > 0 && (
+          <div style={{
+            marginTop: '16px',
+            opacity: listProgressDone ? 0 : 1,
+            transition: 'opacity 1.2s ease',
+          }}>
+            {listProgress.map((p, i) => {
+              const isActive = listLoading && i === listProgress.length - 1;
+              return (
+                <div key={p.step} style={{
+                  display: 'flex', alignItems: 'center', gap: '10px',
+                  padding: '5px 0',
+                  color: isActive ? '#ffffff' : '#6b7280',
+                  fontSize: '14px',
+                  transition: 'color 0.3s',
+                }}>
+                  {isActive ? (
+                    <svg width="14" height="14" viewBox="0 0 24 24" style={{ flexShrink: 0, animation: 'spin 0.8s linear infinite' }}>
+                      <circle cx="12" cy="12" r="10" fill="none" stroke="#2a2d35" strokeWidth="3"/>
+                      <path d="M12 2a10 10 0 0 1 10 10" fill="none" stroke="#00c030" strokeWidth="3" strokeLinecap="round"/>
+                    </svg>
+                  ) : (
+                    <svg width="14" height="14" viewBox="0 0 24 24" style={{ flexShrink: 0 }}>
+                      <circle cx="12" cy="12" r="10" fill="#00c030" opacity="0.15"/>
+                      <path d="M7 12l3.5 3.5L17 8" fill="none" stroke="#00c030" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                  )}
+                  {p.message}
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        {listError && (
+          <div style={{ marginTop: '12px', padding: '10px 12px', backgroundColor: '#2d1515', border: '1px solid #5c2020', borderRadius: '8px', color: '#f87171', fontSize: '13px' }}>
+            {listError}
+          </div>
+        )}
+      </div>
+
+      {/* Imported lists */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '24px' }}>
+        {lists.map((list) => (
+          <div
+            key={list.id}
+            className="friend-card"
+            style={{
+              backgroundColor: '#1e2128',
+              border: '1px solid #2a2d35',
+              borderRadius: '16px',
+              padding: '16px 20px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '12px',
+            }}
+          >
+            {/* Film emoji avatar */}
+            <div style={{
+              width: '48px', height: '48px', borderRadius: '50%',
+              backgroundColor: '#252830', border: '1px solid #3a3d45',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: '22px', flexShrink: 0,
+            }}>
+              🎬
+            </div>
+
+            {/* Info */}
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontWeight: 700, color: '#ffffff', fontSize: '16px', marginBottom: '6px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {list.name}
+              </div>
+              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                <span style={{
+                  fontSize: '13px', color: '#9ba3af',
+                  backgroundColor: '#252830', borderRadius: '6px',
+                  padding: '2px 8px', whiteSpace: 'nowrap',
+                }}>
+                  {list.movies.length} films
+                </span>
+                <span style={{
+                  fontSize: '13px', color: '#6b7280',
+                  backgroundColor: '#252830', borderRadius: '6px',
+                  padding: '2px 8px', whiteSpace: 'nowrap',
+                }}>
+                  by {list.owner}
+                </span>
+              </div>
+              <div style={{ color: '#6b7280', fontSize: '12px', marginTop: '6px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                synced {timeAgo(list.last_synced)}
+                {!list.tmdb_enriched && (
+                  <span style={{ fontSize: '11px', color: '#6b7280', backgroundColor: '#252830', border: '1px solid #2a2d35', borderRadius: '4px', padding: '1px 6px' }}>
+                    Enriching…
+                  </span>
+                )}
+              </div>
+            </div>
+
+            {/* Actions */}
+            <div style={{ display: 'flex', gap: '2px', flexShrink: 0 }}>
+              <button
+                onClick={() => handleSyncList(list.id)}
+                disabled={syncingListId === list.id}
+                title="Re-import"
+                className="icon-btn"
+                style={{
+                  width: '32px', height: '32px', borderRadius: '8px',
+                  backgroundColor: 'transparent', border: 'none', cursor: 'pointer',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  color: '#9ba3af', transition: 'background-color 0.15s',
+                  opacity: syncingListId === list.id ? 0.5 : 1,
+                }}
+                onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#252830')}
+                onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+              >
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+                  style={{ transform: syncingListId === list.id ? 'rotate(360deg)' : 'none', transition: 'transform 1s linear' }}>
+                  <path d="M23 4v6h-6M1 20v-6h6"/>
+                  <path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/>
+                </svg>
+              </button>
+              <button
+                onClick={() => handleDeleteList(list.id, list.name)}
+                disabled={deletingListId === list.id}
+                title="Remove"
+                className="icon-btn"
+                style={{
+                  width: '32px', height: '32px', borderRadius: '8px',
+                  backgroundColor: 'transparent', border: 'none', cursor: 'pointer',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  color: '#9ba3af', transition: 'background-color 0.15s',
+                  opacity: deletingListId === list.id ? 0.5 : 1,
+                }}
+                onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#2d1515')}
+                onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="3 6 5 6 21 6"/>
+                  <path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/>
+                  <path d="M10 11v6M14 11v6"/>
+                  <path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2"/>
+                </svg>
+              </button>
+            </div>
+          </div>
+        ))}
+      </div>
+
       {/* TMDB API key panel */}
       <div style={{
         backgroundColor: '#1e2128',

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getFriend, upsertFriend, getSettings } from '@/lib/storage';
 import { fetchProfileInfo, fetchAllWatched, fetchWatchlist } from '@/lib/letterboxd';
-import { enrichMovies } from '@/lib/tmdb';
+import { enrichAndSaveFriend } from '@/lib/tmdb';
 
 export async function POST(
   _req: NextRequest,
@@ -18,22 +18,23 @@ export async function POST(
     const watchlist = await fetchWatchlist(params.username);
 
     const settings = await getSettings();
-    let enrichedWatchlist = watchlist;
-
-    if (settings.tmdb_api_key) {
-      enrichedWatchlist = await enrichMovies(watchlist, settings.tmdb_api_key);
-    }
 
     const friend = {
       ...existing,
       avatar_url: profile.avatar_url,
-      watchlist: enrichedWatchlist,
+      watchlist,
       watched,
       last_synced: new Date().toISOString(),
+      tmdb_enriched: !settings.tmdb_api_key,
     };
 
     await upsertFriend(friend);
-    return NextResponse.json(friend);
+
+    if (settings.tmdb_api_key) {
+      enrichAndSaveFriend(params.username, settings.tmdb_api_key).catch(console.error);
+    }
+
+    return NextResponse.json({ ok: true });
   } catch (err) {
     return NextResponse.json(
       { error: err instanceof Error ? err.message : 'Sync failed' },

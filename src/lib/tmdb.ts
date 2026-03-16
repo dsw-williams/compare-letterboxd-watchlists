@@ -1,4 +1,5 @@
 import { Movie } from './types';
+import { getFriend, upsertFriend, getLists, upsertList } from './storage';
 
 const BASE_URL = 'https://api.themoviedb.org/3';
 const IMAGE_BASE = 'https://image.tmdb.org/t/p/w342';
@@ -86,4 +87,19 @@ export async function enrichMovies(movies: Movie[], apiKey: string): Promise<Mov
     enriched.push(movie);
   }
   return enriched;
+}
+
+export async function enrichAndSaveFriend(username: string, apiKey: string): Promise<void> {
+  const friend = await getFriend(username);
+  if (!friend) return;
+  const enriched = await enrichMovies(friend.watchlist, apiKey);
+  await upsertFriend({ ...friend, watchlist: enriched, tmdb_enriched: true });
+}
+
+export async function enrichAndSaveList(id: string, apiKey: string): Promise<void> {
+  const lists = await getLists();
+  const list = lists.find((l) => l.id === id);
+  if (!list) return;
+  const enriched = await enrichMovies(list.movies, apiKey);
+  await upsertList({ ...list, movies: enriched, tmdb_enriched: true });
 }

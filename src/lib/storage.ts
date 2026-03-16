@@ -1,9 +1,10 @@
 import fs from 'fs/promises';
 import path from 'path';
-import { Friend, Settings } from './types';
+import { Friend, LetterboxdList, Settings } from './types';
 
 const DATA_DIR = path.join(process.cwd(), 'data');
 const FRIENDS_FILE = path.join(DATA_DIR, 'friends.json');
+const LISTS_FILE = path.join(DATA_DIR, 'lists.json');
 const SETTINGS_FILE = path.join(DATA_DIR, 'settings.json');
 
 async function ensureDataDir() {
@@ -26,7 +27,10 @@ async function writeFriendsFile(data: { friends: Friend[] }) {
 
 export async function getFriends(): Promise<Friend[]> {
   const data = await readFriendsFile();
-  return data.friends;
+  return data.friends.map((f) => {
+    const raw = f as Friend & { tmdb_enriched?: boolean };
+    return { ...raw, tmdb_enriched: raw.tmdb_enriched ?? true };
+  });
 }
 
 export async function getFriend(username: string): Promise<Friend | null> {
@@ -53,6 +57,45 @@ export async function deleteFriend(username: string): Promise<void> {
     (f) => f.username.toLowerCase() !== username.toLowerCase()
   );
   await writeFriendsFile(data);
+}
+
+async function readListsFile(): Promise<{ lists: LetterboxdList[] }> {
+  try {
+    const content = await fs.readFile(LISTS_FILE, 'utf-8');
+    return JSON.parse(content);
+  } catch {
+    return { lists: [] };
+  }
+}
+
+async function writeListsFile(data: { lists: LetterboxdList[] }) {
+  await ensureDataDir();
+  await fs.writeFile(LISTS_FILE, JSON.stringify(data, null, 2));
+}
+
+export async function getLists(): Promise<LetterboxdList[]> {
+  const data = await readListsFile();
+  return data.lists.map((l) => {
+    const raw = l as LetterboxdList & { tmdb_enriched?: boolean };
+    return { ...raw, tmdb_enriched: raw.tmdb_enriched ?? true };
+  });
+}
+
+export async function upsertList(list: LetterboxdList): Promise<void> {
+  const data = await readListsFile();
+  const idx = data.lists.findIndex((l) => l.id === list.id);
+  if (idx >= 0) {
+    data.lists[idx] = list;
+  } else {
+    data.lists.push(list);
+  }
+  await writeListsFile(data);
+}
+
+export async function deleteList(id: string): Promise<void> {
+  const data = await readListsFile();
+  data.lists = data.lists.filter((l) => l.id !== id);
+  await writeListsFile(data);
 }
 
 export async function getSettings(): Promise<Settings> {

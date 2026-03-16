@@ -5,9 +5,9 @@ import { Movie, WatchedMovie } from './types';
 const SCRIPT_PATH = path.join(process.cwd(), 'scripts', 'letterboxd_scraper.py');
 const PYTHON = process.env.PYTHON_EXECUTABLE ?? 'python3';
 
-function spawnPython<T>(command: string, username: string): Promise<T> {
+function spawnPython<T>(command: string, ...args: string[]): Promise<T> {
   return new Promise((resolve, reject) => {
-    const proc = spawn(PYTHON, [SCRIPT_PATH, command, username]);
+    const proc = spawn(PYTHON, [SCRIPT_PATH, command, ...args]);
 
     let stdout = '';
     let stderr = '';
@@ -80,4 +80,26 @@ export async function fetchWatchlist(username: string): Promise<Movie[]> {
     rating: null,
     runtime: null,
   }));
+}
+
+export async function fetchList(
+  owner: string,
+  slug: string
+): Promise<{ title: string; movies: Movie[] }> {
+  const result = await spawnPython<{ title: string; movies: Array<{ slug: string; title: string; year: string }> }>('list', owner, slug);
+  return {
+    title: result.title,
+    movies: result.movies.map(({ slug: s, title, year }) => ({
+      title,
+      year,
+      slug: s,
+      director: null,
+      poster_url: null,
+      letterboxd_url: `https://letterboxd.com/film/${s}/`,
+      tmdb_id: null,
+      genres: [],
+      rating: null,
+      runtime: null,
+    })),
+  };
 }
