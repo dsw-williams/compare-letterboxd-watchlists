@@ -49,6 +49,46 @@ Open [http://localhost:3000](http://localhost:3000)
 
 ---
 
+## Docker (alternative setup)
+
+If you'd rather not install Node.js locally — or want to run this on a NAS or home server — you can use Docker instead.
+
+### Requirements
+
+- [Docker](https://www.docker.com/) with Docker Compose
+
+### Run
+
+```bash
+git clone https://github.com/dsw-williams/compare-letterboxd-watchlists
+cd compare-letterboxd-watchlists
+mkdir -p data
+docker compose up --build
+```
+
+Open [http://localhost:3000](http://localhost:3000)
+
+Your data is stored in the `data/` folder next to `docker-compose.yml` and persists across restarts.
+
+To run in the background:
+
+```bash
+docker compose up --build -d
+docker compose logs -f   # view logs
+docker compose down      # stop
+```
+
+To rebuild after pulling updates:
+
+```bash
+git pull
+docker compose up --build
+```
+
+> **NAS / home server note:** The image supports both `amd64` and `arm64`, so it works on most NAS devices (Synology, Unraid, etc.). Change the port mapping in `docker-compose.yml` if 3000 is already in use (e.g. `"8080:3000"`).
+
+---
+
 ## Usage
 
 1. Go to **Settings** (gear icon, top right)
