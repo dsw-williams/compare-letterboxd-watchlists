@@ -107,6 +107,18 @@ services:
 
 ---
 
+## Credits
+
+Letterboxd scraping is powered by [letterboxdpy](https://github.com/fastfingertips/letterboxdpy) by [@fastfingertips](https://github.com/fastfingertips).
+
+---
+
+## Docker Hub
+
+[dswwilliams/compare-letterboxd-watchlists](https://hub.docker.com/r/dswwilliams/compare-letterboxd-watchlists)
+
+---
+
 ## License
 
 MIT
