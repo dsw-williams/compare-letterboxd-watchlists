@@ -3,8 +3,11 @@
 A personal, local-only web app to compare Letterboxd watchlists across friends and find films to watch together.
 
 - Browse all films on your friends' watchlists, grouped by how many people want to watch them
+- Import Letterboxd lists and see which films on the list are on your friends' watchlists
 - Filter by genre, sort by rating, runtime, or title
-- Fade out films you've already watched
+- Fade or hide films you've already watched
+- Highlights each friend's top-4 favourite films with a gold border
+- Set custom display names for friends
 - Movie posters, ratings, runtime, and director via TMDB (optional)
 
 ---
@@ -93,16 +96,17 @@ services:
 ## Usage
 
 1. Go to **Settings** (gear icon, top right)
-2. Add friends by their Letterboxd username
-3. Optionally add a free [TMDB API key](https://www.themoviedb.org/settings/api) to enable movie posters, ratings, runtime, and director info
-4. Head back to the home page, select friends, and browse your shared watchlists
+2. Add friends by their Letterboxd username — optionally set a custom display name for each
+3. Optionally import Letterboxd lists by URL (e.g. `letterboxd.com/username/list/list-name/`)
+4. Optionally add a free [TMDB API key](https://www.themoviedb.org/settings/api) to enable movie posters, ratings, runtime, and director info
+5. Head back to the home page, select friends, and browse your shared watchlists
 
 ---
 
 ## Notes
 
 - All data is stored locally in a `data/` folder — nothing ever leaves your machine
-- The **sync button** (↻) on the Settings page picks up recent watched activity and refreshes the watchlist
+- The **sync button** (↻) on the Settings page quickly picks up recent watched activity, refreshes the watchlist, and updates favourite films
 - Re-sync a friend after adding a TMDB key to populate their posters, ratings, and runtime data
 
 ---

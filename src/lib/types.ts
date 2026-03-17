@@ -20,9 +20,11 @@ export interface WatchedMovie {
 
 export interface Friend {
   username: string;
+  custom_name?: string;
   avatar_url: string | null;
   watchlist: Movie[];
   watched: WatchedMovie[];
+  favourites: WatchedMovie[];
   last_synced: string | null;
   tmdb_enriched: boolean;
 }
@@ -30,6 +32,7 @@ export interface Friend {
 export interface LetterboxdList {
   id: string; // "{owner}/{slug}"
   name: string;
+  custom_name?: string;
   owner: string;
   slug: string;
   movies: Movie[];

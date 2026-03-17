@@ -7,16 +7,30 @@ interface MovieCardProps {
   totalSelected: number;
   allFriends: Friend[];
   faded?: boolean;
+  favouritedBy?: string[]; // usernames whose top-4 this movie is in
 }
 
 function starsFromRating(rating: number | null): string {
   if (rating === null) return '';
-  const stars = Math.round(rating / 2);
-  return '★'.repeat(stars) + '☆'.repeat(5 - stars);
+  const val = rating / 2;
+  const full = Math.floor(val);
+  const half = val - full >= 0.5;
+  return '★'.repeat(full) + (half ? '½' : '');
 }
 
-export default function MovieCard({ movie, friends, totalSelected, allFriends, faded }: MovieCardProps) {
+function favouriteLabel(usernames: string[]): string {
+  if (usernames.length === 1) return `${usernames[0]}'s favourite`;
+  return `${usernames[0]} +${usernames.length - 1}'s favourite`;
+}
+
+export default function MovieCard({ movie, friends, totalSelected, allFriends, faded, favouritedBy = [] }: MovieCardProps) {
   const friendData = allFriends.filter((f) => friends.includes(f.username));
+  const isFavourite = favouritedBy.length > 0;
+  const favouriteDisplayNames = favouritedBy.map(
+    (u) => allFriends.find((f) => f.username === u)?.custom_name ?? u
+  );
+
+  const stars = starsFromRating(movie.rating);
 
   return (
     <div
@@ -42,6 +56,10 @@ export default function MovieCard({ movie, friends, totalSelected, allFriends, f
         overflow: 'hidden',
         position: 'relative',
         backgroundColor: '#1e2128',
+        ...(isFavourite && {
+          border: '2px solid #f59e0b',
+          boxShadow: '0 0 18px rgba(245,158,11,0.35)',
+        }),
       }}>
         {movie.poster_url ? (
           <img
@@ -60,33 +78,24 @@ export default function MovieCard({ movie, friends, totalSelected, allFriends, f
           </div>
         )}
 
-        {/* Star rating badge — top left */}
-        {movie.rating !== null && (
+        {/* Favourite label — top right */}
+        {isFavourite && (
           <div style={{
-            position: 'absolute', top: '8px', left: '8px',
-            backgroundColor: 'rgba(0,0,0,0.6)',
-            borderRadius: '99px',
-            padding: '2px 8px',
-            fontSize: '11px',
-            color: '#f59e0b',
-            letterSpacing: '1px',
+            position: 'absolute', top: '8px', right: '8px',
+            backgroundColor: '#f59e0b',
+            borderRadius: '4px',
+            padding: '3px 6px',
+            fontSize: '10px',
+            fontWeight: 700,
+            color: '#1a1a1a',
+            maxWidth: '120px',
+            whiteSpace: 'nowrap',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
           }}>
-            {starsFromRating(movie.rating)}
+            {favouriteLabel(favouriteDisplayNames)}
           </div>
         )}
-
-        {/* Overlap badge — top right */}
-        <div style={{
-          position: 'absolute', top: '8px', right: '8px',
-          backgroundColor: '#f97316',
-          borderRadius: '99px',
-          padding: '2px 7px',
-          fontSize: '11px',
-          fontWeight: 700,
-          color: '#ffffff',
-        }}>
-          {friends.length}/{totalSelected}
-        </div>
 
         {/* Friend avatars — bottom left */}
         <div style={{
@@ -159,6 +168,7 @@ export default function MovieCard({ movie, friends, totalSelected, allFriends, f
         }}>
           {movie.year}
           {movie.runtime ? ` · ${Math.floor(movie.runtime / 60)}h ${movie.runtime % 60}m` : ''}
+          {stars ? ` · ${stars}` : ''}
         </div>
       </div>
     </div>

@@ -1,6 +1,6 @@
 import fs from 'fs/promises';
 import path from 'path';
-import { Friend, LetterboxdList, Settings } from './types';
+import { Friend, WatchedMovie, LetterboxdList, Settings } from './types';
 
 const DATA_DIR = path.join(process.cwd(), 'data');
 const FRIENDS_FILE = path.join(DATA_DIR, 'friends.json');
@@ -28,8 +28,8 @@ async function writeFriendsFile(data: { friends: Friend[] }) {
 export async function getFriends(): Promise<Friend[]> {
   const data = await readFriendsFile();
   return data.friends.map((f) => {
-    const raw = f as Friend & { tmdb_enriched?: boolean };
-    return { ...raw, tmdb_enriched: raw.tmdb_enriched ?? true };
+    const raw = f as Friend & { tmdb_enriched?: boolean; favourites?: WatchedMovie[] };
+    return { ...raw, tmdb_enriched: raw.tmdb_enriched ?? true, favourites: raw.favourites ?? [] };
   });
 }
 

@@ -12,12 +12,13 @@ interface MovieGridProps {
   totalSelected: number;
   allFriends: Friend[];
   selectedFriends: string[];
-  fadeWatched: boolean;
+  watchedFilter: 'show' | 'fade' | 'hide';
+  favMap: Map<string, string[]>;
 }
 
-export default function MovieGrid({ items, totalSelected, allFriends, selectedFriends, fadeWatched }: MovieGridProps) {
+export default function MovieGrid({ items, totalSelected, allFriends, selectedFriends, watchedFilter, favMap }: MovieGridProps) {
   const watchedSlugs = new Set<string>();
-  if (fadeWatched) {
+  if (watchedFilter !== 'show') {
     for (const friend of allFriends) {
       if (selectedFriends.includes(friend.username)) {
         for (const m of friend.watched) watchedSlugs.add(m.slug);
@@ -25,7 +26,9 @@ export default function MovieGrid({ items, totalSelected, allFriends, selectedFr
     }
   }
 
-  if (items.length === 0) {
+  const displayItems = watchedFilter === 'hide' ? items.filter(({ movie }) => !watchedSlugs.has(movie.slug)) : items;
+
+  if (displayItems.length === 0) {
     return (
       <div style={{ textAlign: 'center', padding: '60px 0', color: '#6b7280', fontSize: '14px' }}>
         No films found for this selection.
@@ -39,14 +42,15 @@ export default function MovieGrid({ items, totalSelected, allFriends, selectedFr
       gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))',
       gap: '12px',
     }}>
-      {items.map(({ movie, friends }) => (
+      {displayItems.map(({ movie, friends }) => (
         <MovieCard
           key={movie.slug}
           movie={movie}
           friends={friends}
           totalSelected={totalSelected}
           allFriends={allFriends}
-          faded={fadeWatched && watchedSlugs.has(movie.slug)}
+          faded={watchedFilter === 'fade' && watchedSlugs.has(movie.slug)}
+          favouritedBy={favMap.get(movie.slug) ?? []}
         />
       ))}
     </div>

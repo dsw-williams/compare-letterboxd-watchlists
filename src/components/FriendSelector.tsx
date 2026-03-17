@@ -98,14 +98,14 @@ export default function FriendSelector({ friends, selected, onToggle, onSelectAl
                 )}
               </div>
 
-              {/* Username */}
+              {/* Display name */}
               <span style={{
                 fontSize: '12px', color: '#9ba3af',
                 textAlign: 'center', overflow: 'hidden',
                 textOverflow: 'ellipsis', whiteSpace: 'nowrap',
                 maxWidth: '72px', display: 'block',
               }}>
-                {friend.username}
+                {friend.custom_name ?? friend.username}
               </span>
             </div>
           );

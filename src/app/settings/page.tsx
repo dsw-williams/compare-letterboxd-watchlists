@@ -39,6 +39,11 @@ export default function SettingsPage() {
   const [listProgressDone, setListProgressDone] = useState(false);
   const [deletingListId, setDeletingListId] = useState<string | null>(null);
   const [syncingListId, setSyncingListId] = useState<string | null>(null);
+  const [renamingListId, setRenamingListId] = useState<string | null>(null);
+  const [renameValue, setRenameValue] = useState('');
+  const [renamingFriendId, setRenamingFriendId] = useState<string | null>(null);
+  const [renameFriendValue, setRenameFriendValue] = useState('');
+  const [syncProgress, setSyncProgress] = useState<Record<string, number>>({});
 
   useEffect(() => {
     fetchFriends();
@@ -171,6 +176,26 @@ export default function SettingsPage() {
     }
   }
 
+  async function handleRenameFriend(username: string, customName: string) {
+    await fetch(`/api/friends/${username}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ custom_name: customName.trim() || null }),
+    });
+    setRenamingFriendId(null);
+    await fetchFriends();
+  }
+
+  async function handleRenameList(id: string, customName: string) {
+    await fetch(`/api/lists/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ custom_name: customName.trim() || null }),
+    });
+    setRenamingListId(null);
+    await fetchLists();
+  }
+
   async function handleSyncList(id: string) {
     setSyncingListId(id);
     try {
@@ -208,11 +233,33 @@ export default function SettingsPage() {
 
   async function handleSync(username: string) {
     setSyncingId(username);
+    setSyncProgress((p) => ({ ...p, [username]: 0 }));
     try {
-      await fetch(`/api/friends/${username}/sync-rss`, { method: 'POST' });
-      await fetchFriends();
+      const res = await fetch(`/api/friends/${username}/sync`, { method: 'POST' });
+      const reader = res.body?.getReader();
+      const decoder = new TextDecoder('utf-8', { fatal: false });
+      if (!reader) throw new Error('No stream');
+      let buffer = '';
+      let done = false;
+      while (!done) {
+        const { value, done: streamDone } = await reader.read();
+        done = streamDone;
+        if (value) buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        buffer = lines.pop() ?? '';
+        for (const line of lines.filter(Boolean)) {
+          try {
+            const data = JSON.parse(line);
+            if (data.pct !== undefined) setSyncProgress((p) => ({ ...p, [username]: data.pct }));
+            if (data.step === 'done') await fetchFriends();
+          } catch {}
+        }
+      }
     } finally {
-      setSyncingId(null);
+      setTimeout(() => {
+        setSyncingId(null);
+        setSyncProgress((p) => { const n = { ...p }; delete n[username]; return n; });
+      }, 600);
     }
   }
 
@@ -311,7 +358,6 @@ export default function SettingsPage() {
               transition: 'background-color 0.15s',
             }}
           >
-            <span style={{ fontSize: '16px' }}>✦</span>
             {loading ? 'Importing...' : 'Import'}
           </button>
         </form>
@@ -398,9 +444,50 @@ export default function SettingsPage() {
 
             {/* Info */}
             <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontWeight: 700, color: '#ffffff', fontSize: '16px', marginBottom: '6px' }}>
-                @{friend.username}
-              </div>
+              {renamingFriendId === friend.username ? (
+                <div style={{ display: 'flex', gap: '6px', marginBottom: '6px' }}>
+                  <input
+                    autoFocus
+                    value={renameFriendValue}
+                    onChange={(e) => setRenameFriendValue(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') handleRenameFriend(friend.username, renameFriendValue);
+                      if (e.key === 'Escape') setRenamingFriendId(null);
+                    }}
+                    placeholder={friend.username}
+                    style={{
+                      flex: 1, minWidth: 0,
+                      backgroundColor: '#0d0f12', border: '1px solid #2a2d35',
+                      borderRadius: '6px', color: '#ffffff', fontSize: '14px',
+                      padding: '4px 8px', outline: 'none',
+                    }}
+                  />
+                  <button
+                    onClick={() => handleRenameFriend(friend.username, renameFriendValue)}
+                    style={{ padding: '4px 10px', borderRadius: '6px', fontSize: '13px', fontWeight: 600, cursor: 'pointer', border: 'none', backgroundColor: '#00c030', color: '#ffffff' }}
+                  >
+                    Save
+                  </button>
+                  <button
+                    onClick={() => setRenamingFriendId(null)}
+                    style={{ padding: '4px 10px', borderRadius: '6px', fontSize: '13px', cursor: 'pointer', border: '1px solid #2a2d35', backgroundColor: 'transparent', color: '#9ba3af' }}
+                  >
+                    Cancel
+                  </button>
+                </div>
+              ) : (
+                <div style={{ fontWeight: 700, color: '#ffffff', fontSize: '16px', marginBottom: '2px' }}>
+                  {friend.custom_name ?? friend.username}
+                </div>
+              )}
+              {!renamingFriendId && friend.custom_name && (
+                <div style={{ fontSize: '12px', color: '#6b7280', marginBottom: '6px' }}>
+                  @{friend.username}
+                </div>
+              )}
+              {!renamingFriendId && !friend.custom_name && (
+                <div style={{ marginBottom: '6px' }} />
+              )}
               <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                 <span style={{
                   fontSize: '13px', color: '#9ba3af',
@@ -416,6 +503,13 @@ export default function SettingsPage() {
                 }}>
                   {friend.watched.length} watched
                 </span>
+                <span style={{
+                  fontSize: '13px', color: '#9ba3af',
+                  backgroundColor: '#252830', borderRadius: '6px',
+                  padding: '2px 8px', whiteSpace: 'nowrap',
+                }}>
+                  {(friend.favourites ?? []).length} favourites
+                </span>
               </div>
               <div style={{ color: '#6b7280', fontSize: '12px', marginTop: '6px', display: 'flex', alignItems: 'center', gap: '8px' }}>
                 synced {timeAgo(friend.last_synced)}
@@ -430,26 +524,64 @@ export default function SettingsPage() {
             {/* Actions */}
             <div style={{ display: 'flex', gap: '2px', flexShrink: 0 }}>
               <button
-                onClick={() => handleSync(friend.username)}
-                disabled={syncingId === friend.username}
-                title="Sync (RSS)"
+                onClick={() => { setRenamingFriendId(friend.username); setRenameFriendValue(friend.custom_name ?? ''); }}
+                title="Rename"
                 className="icon-btn"
                 style={{
                   width: '32px', height: '32px', borderRadius: '8px',
                   backgroundColor: 'transparent', border: 'none', cursor: 'pointer',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   color: '#9ba3af', transition: 'background-color 0.15s',
-                  opacity: syncingId === friend.username ? 0.5 : 1,
                 }}
                 onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#252830')}
                 onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
               >
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
-                  style={{ transform: syncingId === friend.username ? 'rotate(360deg)' : 'none', transition: 'transform 1s linear' }}>
-                  <path d="M23 4v6h-6M1 20v-6h6"/>
-                  <path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/>
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/>
+                  <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
                 </svg>
               </button>
+              <div style={{ position: 'relative', width: '32px', height: '32px', flexShrink: 0 }}>
+                {syncingId === friend.username && (
+                  <svg
+                    width="40" height="40"
+                    style={{ position: 'absolute', top: '-4px', left: '-4px', pointerEvents: 'none' }}
+                    viewBox="0 0 40 40"
+                  >
+                    <circle cx="20" cy="20" r="16" fill="none" stroke="#2a2d35" strokeWidth="2" />
+                    <circle
+                      cx="20" cy="20" r="16" fill="none"
+                      stroke="#00c030" strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeDasharray="100.5"
+                      strokeDashoffset={100.5 * (1 - (syncProgress[friend.username] ?? 0) / 100)}
+                      style={{ transform: 'rotate(-90deg)', transformOrigin: '20px 20px', transition: 'stroke-dashoffset 0.3s ease' }}
+                    />
+                  </svg>
+                )}
+                <button
+                  onClick={() => handleSync(friend.username)}
+                  disabled={syncingId === friend.username}
+                  title="Sync"
+                  className="icon-btn"
+                  style={{
+                    width: '32px', height: '32px', borderRadius: '8px',
+                    backgroundColor: 'transparent', border: 'none',
+                    cursor: syncingId === friend.username ? 'default' : 'pointer',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    color: syncingId === friend.username ? '#00c030' : '#9ba3af',
+                    transition: 'background-color 0.15s, color 0.15s',
+                  }}
+                  onMouseEnter={(e) => { if (syncingId !== friend.username) (e.currentTarget as HTMLButtonElement).style.backgroundColor = '#252830'; }}
+                  onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.backgroundColor = 'transparent'; }}
+                >
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+                    style={syncingId === friend.username ? { animation: 'spin 1s linear infinite' } : undefined}>
+                    <path d="M23 4v6h-6M1 20v-6h6"/>
+                    <path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/>
+                  </svg>
+                </button>
+              </div>
               <button
                 onClick={() => handleDelete(friend.username)}
                 disabled={deletingId === friend.username}
@@ -532,8 +664,7 @@ export default function SettingsPage() {
               transition: 'background-color 0.15s',
             }}
           >
-            <span style={{ fontSize: '16px' }}>🎬</span>
-            {listLoading ? 'Importing...' : 'Import list'}
+            {listLoading ? 'Importing...' : 'Import'}
           </button>
         </form>
 
@@ -606,9 +737,49 @@ export default function SettingsPage() {
 
             {/* Info */}
             <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontWeight: 700, color: '#ffffff', fontSize: '16px', marginBottom: '6px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                {list.name}
-              </div>
+              {renamingListId === list.id ? (
+                <div style={{ display: 'flex', gap: '6px', marginBottom: '6px' }}>
+                  <input
+                    autoFocus
+                    value={renameValue}
+                    onChange={(e) => setRenameValue(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') handleRenameList(list.id, renameValue);
+                      if (e.key === 'Escape') setRenamingListId(null);
+                    }}
+                    placeholder={list.name}
+                    style={{
+                      flex: 1, minWidth: 0,
+                      backgroundColor: '#0d0f12', border: '1px solid #2a2d35',
+                      borderRadius: '6px', color: '#ffffff', fontSize: '14px',
+                      padding: '4px 8px', outline: 'none',
+                    }}
+                  />
+                  <button
+                    onClick={() => handleRenameList(list.id, renameValue)}
+                    style={{ padding: '4px 10px', borderRadius: '6px', fontSize: '13px', fontWeight: 600, cursor: 'pointer', border: 'none', backgroundColor: '#00c030', color: '#ffffff' }}
+                  >
+                    Save
+                  </button>
+                  <button
+                    onClick={() => setRenamingListId(null)}
+                    style={{ padding: '4px 10px', borderRadius: '6px', fontSize: '13px', cursor: 'pointer', border: '1px solid #2a2d35', backgroundColor: 'transparent', color: '#9ba3af' }}
+                  >
+                    Cancel
+                  </button>
+                </div>
+              ) : (
+                <div style={{ marginBottom: '6px' }}>
+                  <div style={{ fontWeight: 700, color: '#ffffff', fontSize: '16px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {list.custom_name ?? list.name}
+                  </div>
+                  {list.custom_name && (
+                    <div style={{ fontSize: '12px', color: '#6b7280', marginTop: '2px' }}>
+                      {list.name}
+                    </div>
+                  )}
+                </div>
+              )}
               <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                 <span style={{
                   fontSize: '13px', color: '#9ba3af',
@@ -638,6 +809,24 @@ export default function SettingsPage() {
             {/* Actions */}
             <div style={{ display: 'flex', gap: '2px', flexShrink: 0 }}>
               <button
+                onClick={() => { setRenamingListId(list.id); setRenameValue(list.custom_name ?? ''); }}
+                title="Rename"
+                className="icon-btn"
+                style={{
+                  width: '32px', height: '32px', borderRadius: '8px',
+                  backgroundColor: 'transparent', border: 'none', cursor: 'pointer',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  color: '#9ba3af', transition: 'background-color 0.15s',
+                }}
+                onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#252830')}
+                onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+              >
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/>
+                  <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                </svg>
+              </button>
+              <button
                 onClick={() => handleSyncList(list.id)}
                 disabled={syncingListId === list.id}
                 title="Re-import"
@@ -653,7 +842,7 @@ export default function SettingsPage() {
                 onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
               >
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
-                  style={{ transform: syncingListId === list.id ? 'rotate(360deg)' : 'none', transition: 'transform 1s linear' }}>
+                  style={syncingListId === list.id ? { animation: 'spin 1s linear infinite' } : undefined}>
                   <path d="M23 4v6h-6M1 20v-6h6"/>
                   <path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/>
                 </svg>

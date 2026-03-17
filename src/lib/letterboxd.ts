@@ -63,7 +63,13 @@ export async function fetchAllWatched(
 }
 
 export async function fetchRecentWatched(username: string): Promise<WatchedMovie[]> {
-  return fetchAllWatched(username);
+  const movies = await spawnPython<Array<{ slug: string; title: string; year: string }>>('watched_recent', username);
+  return movies.map(({ slug, title, year }) => ({
+    slug,
+    title,
+    year,
+    letterboxd_url: `https://letterboxd.com/film/${slug}/`,
+  }));
 }
 
 export async function fetchWatchlist(username: string): Promise<Movie[]> {
@@ -79,6 +85,16 @@ export async function fetchWatchlist(username: string): Promise<Movie[]> {
     genres: [],
     rating: null,
     runtime: null,
+  }));
+}
+
+export async function fetchFavourites(username: string): Promise<WatchedMovie[]> {
+  const movies = await spawnPython<Array<{ slug: string; title: string; year: string }>>('favourites', username);
+  return movies.map(({ slug, title, year }) => ({
+    slug,
+    title,
+    year,
+    letterboxd_url: `https://letterboxd.com/film/${slug}/`,
   }));
 }
 

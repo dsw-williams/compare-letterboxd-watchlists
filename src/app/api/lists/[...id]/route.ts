@@ -39,6 +39,20 @@ export async function POST(
   return NextResponse.json({ ok: true });
 }
 
+export async function PATCH(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string[] }> }
+) {
+  const listId = await resolveId(params);
+  const existing = (await getLists()).find((l) => l.id === listId);
+  if (!existing) {
+    return NextResponse.json({ error: 'List not found' }, { status: 404 });
+  }
+  const body = await req.json();
+  await upsertList({ ...existing, custom_name: body.custom_name ?? undefined });
+  return NextResponse.json({ ok: true });
+}
+
 export async function DELETE(
   _req: NextRequest,
   { params }: { params: Promise<{ id: string[] }> }

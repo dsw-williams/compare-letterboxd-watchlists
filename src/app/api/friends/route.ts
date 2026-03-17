@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getFriends, getFriend, upsertFriend } from '@/lib/storage';
-import { fetchProfileInfo, fetchAllWatched, fetchWatchlist } from '@/lib/letterboxd';
+import { fetchProfileInfo, fetchAllWatched, fetchWatchlist, fetchFavourites } from '@/lib/letterboxd';
 import { enrichAndSaveFriend } from '@/lib/tmdb';
 import { getSettings } from '@/lib/storage';
 
@@ -40,6 +40,9 @@ export async function POST(req: NextRequest) {
         send({ step: 'watchlist', message: 'Scraping watchlist...' });
         const watchlist = await fetchWatchlist(username);
 
+        send({ step: 'favourites', message: 'Fetching favourite films...' });
+        const favourites = await fetchFavourites(username);
+
         const settings = await getSettings();
 
         const friend = {
@@ -47,6 +50,7 @@ export async function POST(req: NextRequest) {
           avatar_url: profile.avatar_url,
           watchlist,
           watched,
+          favourites,
           last_synced: new Date().toISOString(),
           tmdb_enriched: !settings.tmdb_api_key,
         };

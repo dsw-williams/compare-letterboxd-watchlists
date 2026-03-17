@@ -38,9 +38,7 @@ export default function Nav() {
             flexShrink: 0,
           }}
         >
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="white">
-            <path d="M4 3h16a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4a1 1 0 011-1zm0 6h16a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1v-2a1 1 0 011-1zm0 6h16a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1v-2a1 1 0 011-1z"/>
-          </svg>
+          <span style={{ fontSize: '16px', lineHeight: 1 }}>🎬</span>
         </div>
         <span style={{ color: '#ffffff', fontWeight: 900, fontSize: '16px', letterSpacing: '0.06em', textTransform: 'uppercase', fontFamily: 'var(--font-display), system-ui, sans-serif' }}>
           Watchlist

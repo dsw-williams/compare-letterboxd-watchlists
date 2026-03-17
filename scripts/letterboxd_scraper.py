@@ -49,6 +49,32 @@ def cmd_list(username, slug):
     print(json.dumps({'title': title, 'movies': movies}))
 
 
+def cmd_favourites(username):
+    from letterboxdpy.constants.project import DOMAIN
+    from letterboxdpy.core.scraper import parse_url
+
+    dom = parse_url(f"{DOMAIN}/{username}/")
+    section = dom.find("section", {"id": "favourites"})
+    if not section:
+        print(json.dumps([]))
+        return
+
+    movies = []
+    for div in section.find_all("div", attrs={"data-item-slug": True}):
+        slug = div.get("data-item-slug", "")
+        name = div.get("data-item-name", "")
+        full = div.get("data-item-full-display-name", "")
+        year = ""
+        if full and full.endswith(")") and "(" in full:
+            try:
+                year = full.rsplit("(", 1)[1].rstrip(")")
+            except IndexError:
+                pass
+        if slug:
+            movies.append({"slug": slug, "title": name, "year": year})
+    print(json.dumps(movies))
+
+
 def cmd_watched(username):
     from letterboxdpy.pages.user_films import UserFilms
     result = UserFilms(username).get_films()
@@ -59,6 +85,28 @@ def cmd_watched(username):
             'year': str(data['year']) if data.get('year') else '',
         }
         for slug, data in result['movies'].items()
+        if slug
+    ]
+    print(json.dumps(movies))
+
+
+def cmd_watched_recent(username):
+    from letterboxdpy.constants.project import DOMAIN
+    from letterboxdpy.core.scraper import parse_url
+    from letterboxdpy.pages.user_films import extract_movies_from_user_watched
+    from letterboxdpy.utils.utils_url import get_page_url
+
+    base_url = f"{DOMAIN}/{username}/films"
+    dom = parse_url(get_page_url(base_url, 1))
+    movies_dict = extract_movies_from_user_watched(dom)
+
+    movies = [
+        {
+            'slug': slug,
+            'title': data['name'],
+            'year': str(data['year']) if data.get('year') else '',
+        }
+        for slug, data in movies_dict.items()
         if slug
     ]
     print(json.dumps(movies))
@@ -88,6 +136,8 @@ def main():
         'profile': cmd_profile,
         'watchlist': cmd_watchlist,
         'watched': cmd_watched,
+        'watched_recent': cmd_watched_recent,
+        'favourites': cmd_favourites,
     }
 
     if command not in commands:

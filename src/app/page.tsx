@@ -27,7 +27,7 @@ export default function HomePage() {
   const [overlap, setOverlap] = useState<OverlapEntry[]>([]);
   const [loading, setLoading] = useState(false);
   const [activeGenres, setActiveGenres] = useState<string[]>([]);
-  const [fadeWatched, setFadeWatched] = useState(false);
+  const [watchedFilter, setWatchedFilter] = useState<'show' | 'fade' | 'hide'>('show');
   const [sortOrder, setSortOrder] = useState<'random' | 'rating_desc' | 'rating_asc' | 'runtime_desc' | 'runtime_asc' | 'title'>('random');
   const [randomOrder, setRandomOrder] = useState<Map<string, number>>(new Map());
 
@@ -120,14 +120,31 @@ export default function HomePage() {
     setSelected(friends.map((f) => f.username));
   }
 
-  // Gather genres from overlap
+  function friendDisplayName(username: string): string {
+    return friends.find((f) => f.username === username)?.custom_name ?? username;
+  }
+
+  // Build slug → [usernames] map for ALL friends' favourite films (not just selected)
+  const favMap = useMemo(() => {
+    const map = new Map<string, string[]>();
+    for (const friend of friends) {
+      for (const m of friend.favourites ?? []) {
+        map.set(m.slug, [...(map.get(m.slug) ?? []), friend.username]);
+      }
+    }
+    return map;
+  }, [selected, friends]);
+
+  // Gather genres from overlap — also include any active genres so they stay
+  // visible even if no movies currently match them (allows deselecting them)
   const genres = useMemo(() => {
     const set = new Set<string>();
     for (const { movie } of overlap) {
       for (const g of movie.genres) set.add(g);
     }
+    for (const g of activeGenres) set.add(g);
     return ['All', ...Array.from(set).sort()];
-  }, [overlap]);
+  }, [overlap, activeGenres]);
 
   // Filter by genre
   const filtered = useMemo(() => {
@@ -218,10 +235,11 @@ export default function HomePage() {
                     display: 'flex',
                     alignItems: 'center',
                     gap: '6px',
+                    textAlign: 'left',
                   }}
                 >
                   <span>🎬</span>
-                  {list.name}
+                  {list.custom_name ?? list.name}
                 </button>
               );
             })}
@@ -370,28 +388,37 @@ export default function HomePage() {
               );
             })()}
             <div style={{ width: '1px', height: '16px', backgroundColor: '#2a2d35' }} />
-            <span style={{ fontSize: '13px', color: '#9ba3af', whiteSpace: 'nowrap' }}>Fade watched</span>
-            <button
-              onClick={() => setFadeWatched((v) => !v)}
-              style={{
-                width: '40px', height: '22px',
-                borderRadius: '99px',
-                backgroundColor: fadeWatched ? '#00c030' : '#2a2d35',
-                border: 'none', cursor: 'pointer',
-                position: 'relative',
-                transition: 'background-color 0.15s',
-                padding: 0,
-              }}
-            >
-              <div style={{
-                width: '16px', height: '16px', borderRadius: '50%',
-                backgroundColor: '#ffffff',
-                position: 'absolute',
-                top: '3px',
-                left: fadeWatched ? '21px' : '3px',
-                transition: 'left 0.15s',
-              }} />
-            </button>
+            <div style={{
+              display: 'flex',
+              borderRadius: '99px',
+              border: '1px solid #2a2d35',
+              overflow: 'hidden',
+            }}>
+              {(['show', 'fade', 'hide'] as const).map((val, i) => {
+                const isActive = watchedFilter === val;
+                const label = val === 'show' ? 'All' : val === 'fade' ? 'Fade watched' : 'Hide watched';
+                return (
+                  <button
+                    key={val}
+                    onClick={() => setWatchedFilter(val)}
+                    style={{
+                      padding: '5px 12px',
+                      fontSize: '13px',
+                      fontWeight: isActive ? 600 : 400,
+                      cursor: 'pointer',
+                      border: 'none',
+                      borderLeft: i > 0 ? '1px solid #2a2d35' : 'none',
+                      backgroundColor: isActive ? '#00c030' : 'transparent',
+                      color: isActive ? '#ffffff' : '#9ba3af',
+                      transition: 'background-color 0.15s, color 0.15s',
+                      whiteSpace: 'nowrap',
+                    }}
+                  >
+                    {label}
+                  </button>
+                );
+              })}
+            </div>
           </div>
         </div>
       )}
@@ -406,8 +433,8 @@ export default function HomePage() {
       {/* Movie grid — single friend (no list mode): one flat section */}
       {!loading && !listMode && selected.length === 1 && (
         <>
-          <SectionLabel label={`${selected[0]}'s watchlist`} />
-          <MovieGrid items={sortItems(filtered)} totalSelected={1} allFriends={friends} selectedFriends={selected} fadeWatched={fadeWatched} />
+          <SectionLabel label={`${friendDisplayName(selected[0])}'s watchlist`} />
+          <MovieGrid items={sortItems(filtered)} totalSelected={1} allFriends={friends} selectedFriends={selected} watchedFilter={watchedFilter} favMap={favMap} />
         </>
       )}
 
@@ -423,7 +450,7 @@ export default function HomePage() {
               ? `On ${count} of ${selected.length} watchlists`
               : 'On 1 watchlist'
           } />
-          <MovieGrid items={sortItems(items)} totalSelected={selected.length} allFriends={friends} selectedFriends={selected} fadeWatched={fadeWatched} />
+          <MovieGrid items={sortItems(items)} totalSelected={selected.length} allFriends={friends} selectedFriends={selected} watchedFilter={watchedFilter} favMap={favMap} />
         </div>
       ))}
 
