@@ -36,14 +36,14 @@ export default function FriendSelector({ friends, selected, onToggle, onSelectAl
         </button>
       </div>
 
-      <div className="flex flex-wrap gap-5">
+      <div className="grid grid-cols-4 gap-x-2 gap-y-4 sm:flex sm:flex-wrap sm:gap-5">
         {friends.map((friend) => {
           const isSelected = selected.includes(friend.username);
           return (
             <div
               key={friend.username}
               onClick={() => onToggle(friend.username)}
-              className="cursor-pointer flex flex-col items-center gap-2 w-[72px]"
+              className="cursor-pointer flex flex-col items-center gap-2 sm:w-[72px]"
             >
               {/* Avatar with ring + badge */}
               <div className="relative w-16 h-16">
@@ -77,7 +77,7 @@ export default function FriendSelector({ friends, selected, onToggle, onSelectAl
               </div>
 
               {/* Display name */}
-              <span className="text-xs text-text-secondary text-center overflow-hidden text-ellipsis whitespace-nowrap max-w-[72px] block">
+              <span className="text-xs text-text-secondary text-center overflow-hidden text-ellipsis whitespace-nowrap max-w-full sm:max-w-[72px] block">
                 {friend.custom_name ?? friend.username}
               </span>
             </div>

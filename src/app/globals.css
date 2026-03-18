@@ -16,20 +16,18 @@
   --star-yellow: #f59e0b;
 }
 
-@layer base {
-  html, body {
-    background-color: #141414;
-    color: #ffffff;
-    font-family: var(--font-body), 'Graphik', system-ui, sans-serif;
-    font-size: 15px;
-    line-height: 1.5;
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
-  }
+html, body {
+  background-color: #141414;
+  color: #ffffff;
+  font-family: var(--font-body), 'Graphik', system-ui, sans-serif;
+  font-size: 15px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
 
-  * {
-    box-sizing: border-box;
-  }
+* {
+  box-sizing: border-box;
 }
 
 ::-webkit-scrollbar {

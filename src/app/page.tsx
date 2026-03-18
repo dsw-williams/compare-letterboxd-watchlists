@@ -158,6 +158,16 @@ export default function HomePage() {
 
   const sharedCount = filtered.filter(({ friends }) => friends.length >= 2).length;
 
+  const watchedCount = useMemo(() => {
+    if (selected.length === 0) return 0;
+    const slugs = new Set<string>();
+    for (const username of selected) {
+      const friend = friends.find((f) => f.username === username);
+      if (friend) for (const m of friend.watched) slugs.add(m.slug);
+    }
+    return filtered.filter(({ movie }) => slugs.has(movie.slug)).length;
+  }, [filtered, selected, friends]);
+
   // Sort items within a group
   function sortItems(items: OverlapEntry[]) {
     if (sortOrder === 'random') {
@@ -262,10 +272,10 @@ export default function HomePage() {
 
       {/* Results header */}
       {(selected.length >= 1 || listMode) && (
-        <div className="flex items-center justify-between mb-5">
+        <div className="flex flex-col gap-3 mb-5 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-3">
             <span className="text-17 font-bold text-text-primary">
-              {filtered.length} films found
+              {filtered.length} films
             </span>
             {!listMode && selected.length >= 2 && (
               <span className="text-15 text-accent-green font-semibold">
@@ -274,36 +284,46 @@ export default function HomePage() {
             )}
             {listMode && selected.length >= 1 && (
               <span className="text-15 text-accent-green font-semibold">
-                {filtered.filter(({ friends }) => friends.length >= 1).length} on watchlists
+                {filtered.filter(({ friends }) => friends.length >= 1).length} to watch
+              </span>
+            )}
+            {selected.length >= 1 && (
+              <span className="text-15 text-text-secondary font-semibold">
+                {watchedCount} watched
               </span>
             )}
           </div>
 
           {/* Sort + Fade watched controls */}
-          <div className="flex items-center gap-4">
-            <PillButton
-              isActive={sortOrder === 'rating_desc' || sortOrder === 'rating_asc'}
-              onClick={() => setSortOrder((s) => s === 'rating_desc' ? 'rating_asc' : s === 'rating_asc' ? 'random' : 'rating_desc')}
-              className="px-3 py-[5px]"
-            >
-              {sortOrder === 'rating_desc' ? 'Rating ↓' : sortOrder === 'rating_asc' ? 'Rating ↑' : 'Rating'}
-            </PillButton>
-            <PillButton
-              isActive={sortOrder === 'runtime_desc' || sortOrder === 'runtime_asc'}
-              onClick={() => setSortOrder((s) => s === 'runtime_desc' ? 'runtime_asc' : s === 'runtime_asc' ? 'random' : 'runtime_desc')}
-              className="px-3 py-[5px]"
-            >
-              {sortOrder === 'runtime_desc' ? 'Runtime ↓' : sortOrder === 'runtime_asc' ? 'Runtime ↑' : 'Runtime'}
-            </PillButton>
-            <PillButton
-              isActive={sortOrder === 'title'}
-              onClick={() => setSortOrder((s) => s === 'title' ? 'random' : 'title')}
-              className="px-3 py-[5px]"
-            >
-              Title
-            </PillButton>
-            <div className="w-px h-4 bg-border-subtle" />
-            <div className="flex rounded-full border border-border-subtle overflow-hidden">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-4">
+            {/* Sort pills */}
+            <div className="flex items-center gap-2">
+              <PillButton
+                isActive={sortOrder === 'rating_desc' || sortOrder === 'rating_asc'}
+                onClick={() => setSortOrder((s) => s === 'rating_desc' ? 'rating_asc' : s === 'rating_asc' ? 'random' : 'rating_desc')}
+                className="px-3 py-[5px]"
+              >
+                {sortOrder === 'rating_desc' ? 'Rating ↓' : sortOrder === 'rating_asc' ? 'Rating ↑' : 'Rating'}
+              </PillButton>
+              <PillButton
+                isActive={sortOrder === 'runtime_desc' || sortOrder === 'runtime_asc'}
+                onClick={() => setSortOrder((s) => s === 'runtime_desc' ? 'runtime_asc' : s === 'runtime_asc' ? 'random' : 'runtime_desc')}
+                className="px-3 py-[5px]"
+              >
+                {sortOrder === 'runtime_desc' ? 'Runtime ↓' : sortOrder === 'runtime_asc' ? 'Runtime ↑' : 'Runtime'}
+              </PillButton>
+              <PillButton
+                isActive={sortOrder === 'title'}
+                onClick={() => setSortOrder((s) => s === 'title' ? 'random' : 'title')}
+                className="px-3 py-[5px]"
+              >
+                Title
+              </PillButton>
+            </div>
+            {/* Divider — desktop only */}
+            <div className="hidden sm:block w-px h-4 bg-border-subtle" />
+            {/* Watched filter */}
+            <div className="flex rounded-full border border-border-subtle overflow-hidden self-start">
               {(['show', 'fade', 'hide'] as const).map((val, i) => {
                 const isActive = watchedFilter === val;
                 const label = val === 'show' ? 'All' : val === 'fade' ? 'Fade watched' : 'Hide watched';
