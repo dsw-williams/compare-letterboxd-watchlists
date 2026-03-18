@@ -1,8 +1,11 @@
 'use client';
 import { useState, useEffect, useMemo } from 'react';
+import clsx from 'clsx';
 import { Friend, LetterboxdList, Movie } from '@/lib/types';
 import FriendSelector from '@/components/FriendSelector';
 import MovieGrid from '@/components/MovieGrid';
+import Card from '@/components/ui/Card';
+import PillButton from '@/components/ui/PillButton';
 
 interface OverlapEntry {
   movie: Movie;
@@ -11,13 +14,14 @@ interface OverlapEntry {
 
 function SectionLabel({ label }: { label: string }) {
   return (
-    <div style={{ marginBottom: '20px', borderBottom: '1px solid #2a2d35', paddingBottom: '10px' }}>
-      <span style={{ fontSize: '12px', fontWeight: 700, color: '#9ba3af', textTransform: 'uppercase', letterSpacing: '0.12em' }}>
+    <div className="mb-5 border-b border-border-subtle pb-[10px]">
+      <span className="text-xs font-bold text-text-secondary uppercase tracking-[0.12em]">
         {label}
       </span>
     </div>
   );
 }
+
 
 export default function HomePage() {
   const [friends, setFriends] = useState<Friend[]>([]);
@@ -182,19 +186,19 @@ export default function HomePage() {
   const timeOfDay = hour < 12 ? 'this morning' : hour < 17 ? 'this afternoon' : hour < 20 ? 'this evening' : 'tonight';
 
   return (
-    <div className="page-container" style={{ maxWidth: '1400px', margin: '0 auto', padding: '32px 24px' }}>
+    <div className="max-w-[1400px] mx-auto px-6 py-8">
       {/* Page header */}
-      <div style={{ marginBottom: '28px' }}>
-        <h1 style={{ fontSize: '30px', fontWeight: 700, color: '#ffffff', marginBottom: '6px', lineHeight: 1.2 }}>
+      <div className="mb-7">
+        <h1 className="text-[30px] font-bold text-text-primary mb-[6px] leading-[1.2]">
           Who&apos;s watching {timeOfDay}?
         </h1>
-        <p style={{ fontSize: '15px', color: '#9ba3af' }}>
+        <p className="text-15 text-text-secondary">
           Select friends to compare watchlists.
         </p>
       </div>
 
       {/* Friends selector */}
-      <div style={{ marginBottom: lists.length > 0 ? '12px' : '20px' }}>
+      <div className={lists.length > 0 ? 'mb-3' : 'mb-5'}>
         <FriendSelector
           friends={friends}
           selected={selected}
@@ -205,57 +209,39 @@ export default function HomePage() {
 
       {/* Lists selector */}
       {lists.length > 0 && (
-        <div style={{
-          backgroundColor: '#1e2128',
-          border: '1px solid #2a2d35',
-          borderRadius: '16px',
-          padding: '16px 20px',
-          marginBottom: '20px',
-        }}>
-          <div style={{ fontSize: '12px', fontWeight: 700, color: '#9ba3af', textTransform: 'uppercase', letterSpacing: '0.12em', marginBottom: '12px' }}>
+        <Card className="px-5 py-4 mb-5">
+          <div className="text-xs font-bold text-text-secondary uppercase tracking-[0.12em] mb-3">
             Lists
           </div>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+          <div className="flex flex-wrap gap-2">
             {lists.map((list) => {
               const isActive = selectedLists.includes(list.id);
               return (
-                <button
+                <PillButton
                   key={list.id}
+                  isActive={isActive}
                   onClick={() => toggleList(list.id)}
-                  style={{
-                    padding: '5px 14px',
-                    borderRadius: '99px',
-                    fontSize: '13px',
-                    fontWeight: isActive ? 600 : 400,
-                    cursor: 'pointer',
-                    border: `1px solid ${isActive ? '#00c030' : '#2a2d35'}`,
-                    backgroundColor: isActive ? '#00c030' : 'transparent',
-                    color: isActive ? '#ffffff' : '#9ba3af',
-                    transition: 'all 0.15s',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '6px',
-                    textAlign: 'left',
-                  }}
+                  className="px-[14px] py-[5px] flex items-center gap-[6px] text-left"
                 >
                   <span>🎬</span>
                   {list.custom_name ?? list.name}
-                </button>
+                </PillButton>
               );
             })}
           </div>
-        </div>
+        </Card>
       )}
 
       {/* Genre filter chips */}
       {genres.length > 1 && (
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '24px' }}>
+        <div className="flex flex-wrap gap-2 mb-6">
           {genres.map((genre) => {
             const isAll = genre === 'All';
             const isActive = isAll ? activeGenres.length === 0 : activeGenres.includes(genre);
             return (
-              <button
+              <PillButton
                 key={genre}
+                isActive={isActive}
                 onClick={() => {
                   if (isAll) {
                     setActiveGenres([]);
@@ -265,21 +251,10 @@ export default function HomePage() {
                     );
                   }
                 }}
-                style={{
-                  padding: '5px 14px',
-                  borderRadius: '99px',
-                  fontSize: '13px',
-                  fontWeight: isActive ? 600 : 400,
-                  cursor: 'pointer',
-                  border: `1px solid ${isActive ? '#00c030' : '#2a2d35'}`,
-                  backgroundColor: isActive ? '#00c030' : 'transparent',
-                  color: isActive ? '#ffffff' : '#9ba3af',
-                  transition: 'all 0.15s',
-                  lineHeight: 1.4,
-                }}
+                className="px-[14px] py-[5px] leading-[1.4]"
               >
                 {genre}
-              </button>
+              </PillButton>
             );
           })}
         </div>
@@ -287,113 +262,48 @@ export default function HomePage() {
 
       {/* Results header */}
       {(selected.length >= 1 || listMode) && (
-        <div className="results-header" style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          marginBottom: '20px',
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <span style={{ fontSize: '17px', fontWeight: 700, color: '#ffffff' }}>
+        <div className="flex items-center justify-between mb-5">
+          <div className="flex items-center gap-3">
+            <span className="text-17 font-bold text-text-primary">
               {filtered.length} films found
             </span>
             {!listMode && selected.length >= 2 && (
-              <span style={{ fontSize: '15px', color: '#00c030', fontWeight: 600 }}>
+              <span className="text-15 text-accent-green font-semibold">
                 {sharedCount} shared
               </span>
             )}
             {listMode && selected.length >= 1 && (
-              <span style={{ fontSize: '15px', color: '#00c030', fontWeight: 600 }}>
+              <span className="text-15 text-accent-green font-semibold">
                 {filtered.filter(({ friends }) => friends.length >= 1).length} on watchlists
               </span>
             )}
           </div>
 
           {/* Sort + Fade watched controls */}
-          <div className="results-controls" style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-            {/* Rating sort button — cycles: off → ↓ → ↑ → off */}
-            {(() => {
-              const ratingActive = sortOrder === 'rating_desc' || sortOrder === 'rating_asc';
-              const label = sortOrder === 'rating_desc' ? 'Rating ↓' : sortOrder === 'rating_asc' ? 'Rating ↑' : 'Rating';
-              return (
-                <button
-                  onClick={() => setSortOrder((s) =>
-                    s === 'rating_desc' ? 'rating_asc'
-                    : s === 'rating_asc' ? 'random'
-                    : 'rating_desc'
-                  )}
-                  style={{
-                    padding: '5px 12px',
-                    borderRadius: '99px',
-                    fontSize: '13px',
-                    fontWeight: ratingActive ? 600 : 400,
-                    cursor: 'pointer',
-                    border: `1px solid ${ratingActive ? '#00c030' : '#2a2d35'}`,
-                    backgroundColor: ratingActive ? '#00c030' : 'transparent',
-                    color: ratingActive ? '#ffffff' : '#9ba3af',
-                    transition: 'all 0.15s',
-                  }}
-                >
-                  {label}
-                </button>
-              );
-            })()}
-            {/* Runtime sort button — cycles: off → ↓ → ↑ → off */}
-            {(() => {
-              const runtimeActive = sortOrder === 'runtime_desc' || sortOrder === 'runtime_asc';
-              const label = sortOrder === 'runtime_desc' ? 'Runtime ↓' : sortOrder === 'runtime_asc' ? 'Runtime ↑' : 'Runtime';
-              return (
-                <button
-                  onClick={() => setSortOrder((s) =>
-                    s === 'runtime_desc' ? 'runtime_asc'
-                    : s === 'runtime_asc' ? 'random'
-                    : 'runtime_desc'
-                  )}
-                  style={{
-                    padding: '5px 12px',
-                    borderRadius: '99px',
-                    fontSize: '13px',
-                    fontWeight: runtimeActive ? 600 : 400,
-                    cursor: 'pointer',
-                    border: `1px solid ${runtimeActive ? '#00c030' : '#2a2d35'}`,
-                    backgroundColor: runtimeActive ? '#00c030' : 'transparent',
-                    color: runtimeActive ? '#ffffff' : '#9ba3af',
-                    transition: 'all 0.15s',
-                  }}
-                >
-                  {label}
-                </button>
-              );
-            })()}
-            {/* Title sort button */}
-            {(() => {
-              const isActive = sortOrder === 'title';
-              return (
-                <button
-                  onClick={() => setSortOrder((s) => s === 'title' ? 'random' : 'title')}
-                  style={{
-                    padding: '5px 12px',
-                    borderRadius: '99px',
-                    fontSize: '13px',
-                    fontWeight: isActive ? 600 : 400,
-                    cursor: 'pointer',
-                    border: `1px solid ${isActive ? '#00c030' : '#2a2d35'}`,
-                    backgroundColor: isActive ? '#00c030' : 'transparent',
-                    color: isActive ? '#ffffff' : '#9ba3af',
-                    transition: 'all 0.15s',
-                  }}
-                >
-                  Title
-                </button>
-              );
-            })()}
-            <div style={{ width: '1px', height: '16px', backgroundColor: '#2a2d35' }} />
-            <div style={{
-              display: 'flex',
-              borderRadius: '99px',
-              border: '1px solid #2a2d35',
-              overflow: 'hidden',
-            }}>
+          <div className="flex items-center gap-4">
+            <PillButton
+              isActive={sortOrder === 'rating_desc' || sortOrder === 'rating_asc'}
+              onClick={() => setSortOrder((s) => s === 'rating_desc' ? 'rating_asc' : s === 'rating_asc' ? 'random' : 'rating_desc')}
+              className="px-3 py-[5px]"
+            >
+              {sortOrder === 'rating_desc' ? 'Rating ↓' : sortOrder === 'rating_asc' ? 'Rating ↑' : 'Rating'}
+            </PillButton>
+            <PillButton
+              isActive={sortOrder === 'runtime_desc' || sortOrder === 'runtime_asc'}
+              onClick={() => setSortOrder((s) => s === 'runtime_desc' ? 'runtime_asc' : s === 'runtime_asc' ? 'random' : 'runtime_desc')}
+              className="px-3 py-[5px]"
+            >
+              {sortOrder === 'runtime_desc' ? 'Runtime ↓' : sortOrder === 'runtime_asc' ? 'Runtime ↑' : 'Runtime'}
+            </PillButton>
+            <PillButton
+              isActive={sortOrder === 'title'}
+              onClick={() => setSortOrder((s) => s === 'title' ? 'random' : 'title')}
+              className="px-3 py-[5px]"
+            >
+              Title
+            </PillButton>
+            <div className="w-px h-4 bg-border-subtle" />
+            <div className="flex rounded-full border border-border-subtle overflow-hidden">
               {(['show', 'fade', 'hide'] as const).map((val, i) => {
                 const isActive = watchedFilter === val;
                 const label = val === 'show' ? 'All' : val === 'fade' ? 'Fade watched' : 'Hide watched';
@@ -401,18 +311,11 @@ export default function HomePage() {
                   <button
                     key={val}
                     onClick={() => setWatchedFilter(val)}
-                    style={{
-                      padding: '5px 12px',
-                      fontSize: '13px',
-                      fontWeight: isActive ? 600 : 400,
-                      cursor: 'pointer',
-                      border: 'none',
-                      borderLeft: i > 0 ? '1px solid #2a2d35' : 'none',
-                      backgroundColor: isActive ? '#00c030' : 'transparent',
-                      color: isActive ? '#ffffff' : '#9ba3af',
-                      transition: 'background-color 0.15s, color 0.15s',
-                      whiteSpace: 'nowrap',
-                    }}
+                    className={clsx(
+                      'px-3 py-[5px] text-13 cursor-pointer border-none whitespace-nowrap transition-[background-color,color] duration-150',
+                      isActive ? 'font-semibold bg-accent-green text-text-primary' : 'font-normal bg-transparent text-text-secondary',
+                      i > 0 && 'border-l border-border-subtle'
+                    )}
                   >
                     {label}
                   </button>
@@ -425,7 +328,7 @@ export default function HomePage() {
 
       {/* Loading state */}
       {loading && (
-        <div style={{ color: '#6b7280', fontSize: '14px', padding: '20px 0' }}>
+        <div className="text-text-tertiary text-sm py-5">
           Loading...
         </div>
       )}
@@ -440,7 +343,7 @@ export default function HomePage() {
 
       {/* Movie grid — list mode or multiple friends: grouped by overlap count */}
       {!loading && groupedByCount && groupedByCount.map(({ count, items }) => (
-        <div key={count} className="section-with-label" style={{ marginBottom: '32px' }}>
+        <div key={count} className="mb-8">
           <SectionLabel label={
             count === 0
               ? 'On no watchlists'
@@ -456,7 +359,7 @@ export default function HomePage() {
 
       {/* Prompt to select a friend or list */}
       {!loading && selected.length === 0 && !listMode && (friends.length > 0 || lists.length > 0) && (
-        <div style={{ textAlign: 'center', padding: '60px 0', color: '#6b7280', fontSize: '14px' }}>
+        <div className="text-center py-[60px] text-text-tertiary text-sm">
           Select a friend or list to get started.
         </div>
       )}

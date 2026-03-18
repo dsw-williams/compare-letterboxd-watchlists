@@ -1,6 +1,13 @@
 'use client';
 import { useState, useEffect } from 'react';
+import { cn } from '@/lib/utils';
 import { Friend, LetterboxdList } from '@/lib/types';
+import ImportProgress from '@/components/ImportProgress';
+import EntityCard from '@/components/EntityCard';
+import { useImportStream } from '@/hooks/useImportStream';
+import Card from '@/components/ui/Card';
+import PrimaryButton from '@/components/ui/PrimaryButton';
+import InputField from '@/components/ui/InputField';
 
 function timeAgo(isoString: string | null): string {
   if (!isoString) return 'never synced';
@@ -15,28 +22,16 @@ function timeAgo(isoString: string | null): string {
   return `about ${days} day${days > 1 ? 's' : ''} ago`;
 }
 
-type ProgressStep = { step: string; message: string };
-
 export default function SettingsPage() {
-  const [username, setUsername] = useState('');
   const [friends, setFriends] = useState<Friend[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [progress, setProgress] = useState<ProgressStep[]>([]);
-  const [error, setError] = useState<string | null>(null);
   const [syncingId, setSyncingId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
-  const [progressDone, setProgressDone] = useState(false);
   const [tmdbKey, setTmdbKey] = useState('');
   const [tmdbSaved, setTmdbSaved] = useState(false);
   const [tmdbSaving, setTmdbSaving] = useState(false);
 
   // Lists state
-  const [listUrl, setListUrl] = useState('');
   const [lists, setLists] = useState<LetterboxdList[]>([]);
-  const [listLoading, setListLoading] = useState(false);
-  const [listProgress, setListProgress] = useState<ProgressStep[]>([]);
-  const [listError, setListError] = useState<string | null>(null);
-  const [listProgressDone, setListProgressDone] = useState(false);
   const [deletingListId, setDeletingListId] = useState<string | null>(null);
   const [syncingListId, setSyncingListId] = useState<string | null>(null);
   const [renamingListId, setRenamingListId] = useState<string | null>(null);
@@ -44,14 +39,6 @@ export default function SettingsPage() {
   const [renamingFriendId, setRenamingFriendId] = useState<string | null>(null);
   const [renameFriendValue, setRenameFriendValue] = useState('');
   const [syncProgress, setSyncProgress] = useState<Record<string, number>>({});
-
-  useEffect(() => {
-    fetchFriends();
-    fetchLists();
-    fetch('/api/settings')
-      .then((r) => r.json())
-      .then((s) => setTmdbKey(s.tmdb_api_key ?? ''));
-  }, []);
 
   async function fetchFriends() {
     const res = await fetch('/api/friends');
@@ -65,116 +52,25 @@ export default function SettingsPage() {
     setLists(data);
   }
 
-  async function handleImport(e: React.FormEvent) {
-    e.preventDefault();
-    if (!username.trim()) return;
-    setLoading(true);
-    setProgress([]);
-    setError(null);
-    setProgressDone(false);
+  const friendImport = useImportStream({
+    endpoint: '/api/friends',
+    buildBody: (username) => ({ username }),
+    onSuccess: fetchFriends,
+  });
 
-    try {
-      const res = await fetch('/api/friends', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username: username.trim() }),
-      });
+  const listImport = useImportStream({
+    endpoint: '/api/lists',
+    buildBody: (url) => ({ url }),
+    onSuccess: fetchLists,
+  });
 
-      const reader = res.body?.getReader();
-      const decoder = new TextDecoder('utf-8', { fatal: false });
-
-      if (!reader) throw new Error('No response stream');
-
-      let buffer = '';
-      let done = false;
-      while (!done) {
-        const { value, done: streamDone } = await reader.read();
-        done = streamDone;
-        if (value) buffer += decoder.decode(value, { stream: true });
-
-        // Process all complete newline-delimited JSON lines
-        const lines = buffer.split('\n');
-        buffer = lines.pop() ?? ''; // keep any incomplete trailing fragment
-        for (const line of lines.filter(Boolean)) {
-          try {
-            const data = JSON.parse(line);
-            if (data.step === 'error') {
-              setError(data.message);
-            } else if (data.step === 'done') {
-              setProgressDone(true);
-              setTimeout(() => setProgress([]), 1800);
-              setUsername('');
-              await fetchFriends();
-            } else {
-              setProgress((prev) => {
-                const filtered = prev.filter((p) => p.step !== data.step);
-                return [...filtered, { step: data.step, message: data.message }];
-              });
-            }
-          } catch {}
-        }
-      }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Import failed');
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  async function handleImportList(e: React.FormEvent) {
-    e.preventDefault();
-    if (!listUrl.trim()) return;
-    setListLoading(true);
-    setListProgress([]);
-    setListError(null);
-    setListProgressDone(false);
-
-    try {
-      const res = await fetch('/api/lists', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url: listUrl.trim() }),
-      });
-
-      const reader = res.body?.getReader();
-      const decoder = new TextDecoder('utf-8', { fatal: false });
-
-      if (!reader) throw new Error('No response stream');
-
-      let buffer = '';
-      let done = false;
-      while (!done) {
-        const { value, done: streamDone } = await reader.read();
-        done = streamDone;
-        if (value) buffer += decoder.decode(value, { stream: true });
-
-        const lines = buffer.split('\n');
-        buffer = lines.pop() ?? '';
-        for (const line of lines.filter(Boolean)) {
-          try {
-            const data = JSON.parse(line);
-            if (data.step === 'error') {
-              setListError(data.message);
-            } else if (data.step === 'done') {
-              setListProgressDone(true);
-              setTimeout(() => setListProgress([]), 1800);
-              setListUrl('');
-              await fetchLists();
-            } else {
-              setListProgress((prev) => {
-                const filtered = prev.filter((p) => p.step !== data.step);
-                return [...filtered, { step: data.step, message: data.message }];
-              });
-            }
-          } catch {}
-        }
-      }
-    } catch (err) {
-      setListError(err instanceof Error ? err.message : 'Import failed');
-    } finally {
-      setListLoading(false);
-    }
-  }
+  useEffect(() => {
+    fetchFriends();
+    fetchLists();
+    fetch('/api/settings')
+      .then((r) => r.json())
+      .then((s) => setTmdbKey(s.tmdb_api_key ?? ''));
+  }, []);
 
   async function handleRenameFriend(username: string, customName: string) {
     await fetch(`/api/friends/${username}`, {
@@ -275,657 +171,192 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="page-container" style={{ maxWidth: '600px', margin: '0 auto', padding: '40px 16px' }}>
-      <h1 style={{ textAlign: 'center', fontSize: '26px', fontWeight: 700, color: '#ffffff', marginBottom: '36px' }}>
+    <div className="max-w-[600px] mx-auto px-4 py-10">
+      <h1 className="text-center text-26 font-bold text-text-primary mb-9">
         Settings
       </h1>
 
       {/* Add a person panel */}
-      <div style={{
-        backgroundColor: '#1e2128',
-        border: '1px solid #2a2d35',
-        borderRadius: '16px',
-        padding: '24px',
-        marginBottom: '24px',
-      }}>
-        <h2 style={{ fontSize: '17px', fontWeight: 700, color: '#ffffff', marginBottom: '8px' }}>
+      <Card className="p-6 mb-6">
+        <h2 className="text-17 font-bold text-text-primary mb-2">
           Add a person
         </h2>
-        <p style={{ fontSize: '14px', color: '#9ba3af', marginBottom: '20px', lineHeight: 1.6 }}>
+        <p className="text-sm text-text-secondary mb-5 leading-relaxed">
           Enter their Letterboxd username exactly as it appears on their profile page at letterboxd.com/username
         </p>
 
-        <form onSubmit={handleImport}>
+        <form onSubmit={friendImport.handleSubmit}>
           {/* Input with prefix */}
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            backgroundColor: '#0d0f12',
-            border: '1px solid #2a2d35',
-            borderRadius: '8px',
-            height: '44px',
-            marginBottom: '12px',
-            overflow: 'hidden',
-          }}>
-            <span style={{
-              color: '#6b7280',
-              fontSize: '14px',
-              padding: '0 12px',
-              whiteSpace: 'nowrap',
-              borderRight: '1px solid #2a2d35',
-              height: '100%',
-              display: 'flex',
-              alignItems: 'center',
-            }}>
+          <div className="flex items-center bg-bg-input border border-border-subtle rounded-lg h-11 mb-3 overflow-hidden">
+            <span className="text-text-tertiary text-sm px-3 whitespace-nowrap border-r border-border-subtle h-full flex items-center">
               letterboxd.com/
             </span>
             <input
               type="text"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
+              value={friendImport.value}
+              onChange={(e) => friendImport.setValue(e.target.value)}
               placeholder="username"
-              disabled={loading}
-              style={{
-                flex: 1,
-                backgroundColor: 'transparent',
-                border: 'none',
-                outline: 'none',
-                color: '#ffffff',
-                fontSize: '14px',
-                padding: '0 12px',
-                height: '100%',
-              }}
+              disabled={friendImport.loading}
+              className="flex-1 bg-transparent border-none outline-none text-text-primary text-sm px-3 h-full"
             />
           </div>
 
-          <button
+          <PrimaryButton
             type="submit"
-            disabled={loading || !username.trim()}
-            style={{
-              width: '100%',
-              height: '44px',
-              backgroundColor: loading || !username.trim() ? '#005518' : '#00c030',
-              color: '#ffffff',
-              fontWeight: 700,
-              fontSize: '15px',
-              border: 'none',
-              borderRadius: '8px',
-              cursor: loading || !username.trim() ? 'not-allowed' : 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '8px',
-              transition: 'background-color 0.15s',
-            }}
+            disabled={friendImport.loading || !friendImport.value.trim()}
+            className="gap-2 text-15"
           >
-            {loading ? 'Importing...' : 'Import'}
-          </button>
+            {friendImport.loading ? 'Importing...' : 'Import'}
+          </PrimaryButton>
         </form>
 
-        {/* Progress steps */}
-        {progress.length > 0 && (
-          <div style={{
-            marginTop: '16px',
-            opacity: progressDone ? 0 : 1,
-            transition: 'opacity 1.2s ease',
-          }}>
-            {progress.map((p, i) => {
-              const isActive = loading && i === progress.length - 1;
-              return (
-                <div key={p.step} style={{
-                  display: 'flex', alignItems: 'center', gap: '10px',
-                  padding: '5px 0',
-                  color: isActive ? '#ffffff' : '#6b7280',
-                  fontSize: '14px',
-                  transition: 'color 0.3s',
-                }}>
-                  {isActive ? (
-                    <svg width="14" height="14" viewBox="0 0 24 24" style={{ flexShrink: 0, animation: 'spin 0.8s linear infinite' }}>
-                      <circle cx="12" cy="12" r="10" fill="none" stroke="#2a2d35" strokeWidth="3"/>
-                      <path d="M12 2a10 10 0 0 1 10 10" fill="none" stroke="#00c030" strokeWidth="3" strokeLinecap="round"/>
-                    </svg>
-                  ) : (
-                    <svg width="14" height="14" viewBox="0 0 24 24" style={{ flexShrink: 0 }}>
-                      <circle cx="12" cy="12" r="10" fill="#00c030" opacity="0.15"/>
-                      <path d="M7 12l3.5 3.5L17 8" fill="none" stroke="#00c030" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
-                    </svg>
-                  )}
-                  {p.message}
-                </div>
-              );
-            })}
-          </div>
-        )}
-
-        {error && (
-          <div style={{ marginTop: '12px', padding: '10px 12px', backgroundColor: '#2d1515', border: '1px solid #5c2020', borderRadius: '8px', color: '#f87171', fontSize: '13px' }}>
-            {error}
-          </div>
-        )}
-      </div>
+        <ImportProgress progress={friendImport.progress} error={friendImport.error} loading={friendImport.loading} progressDone={friendImport.progressDone} />
+      </Card>
 
       {/* Friend list */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '24px' }}>
+      <div className="flex flex-col gap-2 mb-6">
         {friends.map((friend) => (
-          <div
+          <EntityCard
             key={friend.username}
-            className="friend-card"
-            style={{
-              backgroundColor: '#1e2128',
-              border: '1px solid #2a2d35',
-              borderRadius: '16px',
-              padding: '16px 20px',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '12px',
+            avatarNode={friend.avatar_url ? (
+              <img
+                src={friend.avatar_url}
+                alt={friend.username}
+                width={48}
+                height={48}
+                className="rounded-full border border-border-subtle object-cover"
+              />
+            ) : (
+              <div className="w-12 h-12 rounded-full bg-border-subtle border border-border-strong flex items-center justify-center text-text-tertiary font-bold text-lg">
+                {friend.username[0].toUpperCase()}
+              </div>
+            )}
+            displayName={friend.custom_name ?? friend.username}
+            subtitle={friend.custom_name ? `@${friend.username}` : undefined}
+            showSpacerWhenNoSubtitle
+            chips={[
+              { label: `${friend.watchlist.length} to watch` },
+              { label: `${friend.watched.length} watched` },
+              { label: `${(friend.favourites ?? []).length} favourites` },
+            ]}
+            lastSynced={friend.last_synced}
+            tmdbEnriched={friend.tmdb_enriched}
+            timeAgo={timeAgo}
+            isRenaming={renamingFriendId === friend.username}
+            renameValue={renameFriendValue}
+            renamePlaceholder={friend.username}
+            onRenameChange={setRenameFriendValue}
+            onRenameKeyDown={(e) => {
+              if (e.key === 'Enter') handleRenameFriend(friend.username, renameFriendValue);
+              if (e.key === 'Escape') setRenamingFriendId(null);
             }}
-          >
-            {/* Avatar */}
-            <div style={{ flexShrink: 0 }}>
-              {friend.avatar_url ? (
-                <img
-                  src={friend.avatar_url}
-                  alt={friend.username}
-                  width={48}
-                  height={48}
-                  style={{ borderRadius: '50%', border: '1px solid #2a2d35', objectFit: 'cover' }}
-                />
-              ) : (
-                <div style={{
-                  width: '48px', height: '48px', borderRadius: '50%',
-                  backgroundColor: '#2a2d35', border: '1px solid #3a3d45',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  color: '#6b7280', fontWeight: 700, fontSize: '18px',
-                }}>
-                  {friend.username[0].toUpperCase()}
-                </div>
-              )}
-            </div>
-
-            {/* Info */}
-            <div style={{ flex: 1, minWidth: 0 }}>
-              {renamingFriendId === friend.username ? (
-                <div style={{ display: 'flex', gap: '6px', marginBottom: '6px' }}>
-                  <input
-                    autoFocus
-                    value={renameFriendValue}
-                    onChange={(e) => setRenameFriendValue(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') handleRenameFriend(friend.username, renameFriendValue);
-                      if (e.key === 'Escape') setRenamingFriendId(null);
-                    }}
-                    placeholder={friend.username}
-                    style={{
-                      flex: 1, minWidth: 0,
-                      backgroundColor: '#0d0f12', border: '1px solid #2a2d35',
-                      borderRadius: '6px', color: '#ffffff', fontSize: '14px',
-                      padding: '4px 8px', outline: 'none',
-                    }}
-                  />
-                  <button
-                    onClick={() => handleRenameFriend(friend.username, renameFriendValue)}
-                    style={{ padding: '4px 10px', borderRadius: '6px', fontSize: '13px', fontWeight: 600, cursor: 'pointer', border: 'none', backgroundColor: '#00c030', color: '#ffffff' }}
-                  >
-                    Save
-                  </button>
-                  <button
-                    onClick={() => setRenamingFriendId(null)}
-                    style={{ padding: '4px 10px', borderRadius: '6px', fontSize: '13px', cursor: 'pointer', border: '1px solid #2a2d35', backgroundColor: 'transparent', color: '#9ba3af' }}
-                  >
-                    Cancel
-                  </button>
-                </div>
-              ) : (
-                <div style={{ fontWeight: 700, color: '#ffffff', fontSize: '16px', marginBottom: '2px' }}>
-                  {friend.custom_name ?? friend.username}
-                </div>
-              )}
-              {!renamingFriendId && friend.custom_name && (
-                <div style={{ fontSize: '12px', color: '#6b7280', marginBottom: '6px' }}>
-                  @{friend.username}
-                </div>
-              )}
-              {!renamingFriendId && !friend.custom_name && (
-                <div style={{ marginBottom: '6px' }} />
-              )}
-              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                <span style={{
-                  fontSize: '13px', color: '#9ba3af',
-                  backgroundColor: '#252830', borderRadius: '6px',
-                  padding: '2px 8px', whiteSpace: 'nowrap',
-                }}>
-                  {friend.watchlist.length} to watch
-                </span>
-                <span style={{
-                  fontSize: '13px', color: '#9ba3af',
-                  backgroundColor: '#252830', borderRadius: '6px',
-                  padding: '2px 8px', whiteSpace: 'nowrap',
-                }}>
-                  {friend.watched.length} watched
-                </span>
-                <span style={{
-                  fontSize: '13px', color: '#9ba3af',
-                  backgroundColor: '#252830', borderRadius: '6px',
-                  padding: '2px 8px', whiteSpace: 'nowrap',
-                }}>
-                  {(friend.favourites ?? []).length} favourites
-                </span>
-              </div>
-              <div style={{ color: '#6b7280', fontSize: '12px', marginTop: '6px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                synced {timeAgo(friend.last_synced)}
-                {!friend.tmdb_enriched && (
-                  <span style={{ fontSize: '11px', color: '#6b7280', backgroundColor: '#252830', border: '1px solid #2a2d35', borderRadius: '4px', padding: '1px 6px' }}>
-                    Enriching…
-                  </span>
-                )}
-              </div>
-            </div>
-
-            {/* Actions */}
-            <div style={{ display: 'flex', gap: '2px', flexShrink: 0 }}>
-              <button
-                onClick={() => { setRenamingFriendId(friend.username); setRenameFriendValue(friend.custom_name ?? ''); }}
-                title="Rename"
-                className="icon-btn"
-                style={{
-                  width: '32px', height: '32px', borderRadius: '8px',
-                  backgroundColor: 'transparent', border: 'none', cursor: 'pointer',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  color: '#9ba3af', transition: 'background-color 0.15s',
-                }}
-                onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#252830')}
-                onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
-              >
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/>
-                  <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
-                </svg>
-              </button>
-              <div style={{ position: 'relative', width: '32px', height: '32px', flexShrink: 0 }}>
-                {syncingId === friend.username && (
-                  <svg
-                    width="40" height="40"
-                    style={{ position: 'absolute', top: '-4px', left: '-4px', pointerEvents: 'none' }}
-                    viewBox="0 0 40 40"
-                  >
-                    <circle cx="20" cy="20" r="16" fill="none" stroke="#2a2d35" strokeWidth="2" />
-                    <circle
-                      cx="20" cy="20" r="16" fill="none"
-                      stroke="#00c030" strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeDasharray="100.5"
-                      strokeDashoffset={100.5 * (1 - (syncProgress[friend.username] ?? 0) / 100)}
-                      style={{ transform: 'rotate(-90deg)', transformOrigin: '20px 20px', transition: 'stroke-dashoffset 0.3s ease' }}
-                    />
-                  </svg>
-                )}
-                <button
-                  onClick={() => handleSync(friend.username)}
-                  disabled={syncingId === friend.username}
-                  title="Sync"
-                  className="icon-btn"
-                  style={{
-                    width: '32px', height: '32px', borderRadius: '8px',
-                    backgroundColor: 'transparent', border: 'none',
-                    cursor: syncingId === friend.username ? 'default' : 'pointer',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    color: syncingId === friend.username ? '#00c030' : '#9ba3af',
-                    transition: 'background-color 0.15s, color 0.15s',
-                  }}
-                  onMouseEnter={(e) => { if (syncingId !== friend.username) (e.currentTarget as HTMLButtonElement).style.backgroundColor = '#252830'; }}
-                  onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.backgroundColor = 'transparent'; }}
-                >
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
-                    style={syncingId === friend.username ? { animation: 'spin 1s linear infinite' } : undefined}>
-                    <path d="M23 4v6h-6M1 20v-6h6"/>
-                    <path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/>
-                  </svg>
-                </button>
-              </div>
-              <button
-                onClick={() => handleDelete(friend.username)}
-                disabled={deletingId === friend.username}
-                title="Remove"
-                className="icon-btn"
-                style={{
-                  width: '32px', height: '32px', borderRadius: '8px',
-                  backgroundColor: 'transparent', border: 'none', cursor: 'pointer',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  color: '#9ba3af', transition: 'background-color 0.15s',
-                  opacity: deletingId === friend.username ? 0.5 : 1,
-                }}
-                onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#2d1515')}
-                onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
-              >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <polyline points="3 6 5 6 21 6"/>
-                  <path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/>
-                  <path d="M10 11v6M14 11v6"/>
-                  <path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2"/>
-                </svg>
-              </button>
-            </div>
-          </div>
+            onRenameConfirm={() => handleRenameFriend(friend.username, renameFriendValue)}
+            onRenameCancel={() => setRenamingFriendId(null)}
+            onRenameStart={() => { setRenamingFriendId(friend.username); setRenameFriendValue(friend.custom_name ?? ''); }}
+            isSyncing={syncingId === friend.username}
+            syncProgress={syncProgress[friend.username] ?? 0}
+            onSync={() => handleSync(friend.username)}
+            isDeleting={deletingId === friend.username}
+            onDelete={() => handleDelete(friend.username)}
+          />
         ))}
       </div>
+
       {/* Import a list panel */}
-      <div style={{
-        backgroundColor: '#1e2128',
-        border: '1px solid #2a2d35',
-        borderRadius: '16px',
-        padding: '24px',
-        marginBottom: '24px',
-      }}>
-        <h2 style={{ fontSize: '17px', fontWeight: 700, color: '#ffffff', marginBottom: '8px' }}>
+      <Card className="p-6 mb-6">
+        <h2 className="text-17 font-bold text-text-primary mb-2">
           Import a list
         </h2>
-        <p style={{ fontSize: '14px', color: '#9ba3af', marginBottom: '20px', lineHeight: 1.6 }}>
+        <p className="text-sm text-text-secondary mb-5 leading-relaxed">
           Paste a Letterboxd list URL, e.g. letterboxd.com/username/list/list-name/
         </p>
 
-        <form onSubmit={handleImportList}>
-          <input
+        <form onSubmit={listImport.handleSubmit}>
+          <InputField
             type="text"
-            value={listUrl}
-            onChange={(e) => setListUrl(e.target.value)}
+            value={listImport.value}
+            onChange={(e) => listImport.setValue(e.target.value)}
             placeholder="https://letterboxd.com/username/list/list-name/"
-            disabled={listLoading}
-            style={{
-              width: '100%',
-              backgroundColor: '#0d0f12',
-              border: '1px solid #2a2d35',
-              borderRadius: '8px',
-              height: '44px',
-              padding: '0 14px',
-              color: '#ffffff',
-              fontSize: '14px',
-              outline: 'none',
-              marginBottom: '12px',
-              boxSizing: 'border-box',
-            }}
+            disabled={listImport.loading}
+            className="w-full h-11 px-[14px] mb-3"
           />
-          <button
+          <PrimaryButton
             type="submit"
-            disabled={listLoading || !listUrl.trim()}
-            style={{
-              width: '100%',
-              height: '44px',
-              backgroundColor: listLoading || !listUrl.trim() ? '#005518' : '#00c030',
-              color: '#ffffff',
-              fontWeight: 700,
-              fontSize: '15px',
-              border: 'none',
-              borderRadius: '8px',
-              cursor: listLoading || !listUrl.trim() ? 'not-allowed' : 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '8px',
-              transition: 'background-color 0.15s',
-            }}
+            disabled={listImport.loading || !listImport.value.trim()}
+            className="gap-2 text-15"
           >
-            {listLoading ? 'Importing...' : 'Import'}
-          </button>
+            {listImport.loading ? 'Importing...' : 'Import'}
+          </PrimaryButton>
         </form>
 
-        {listProgress.length > 0 && (
-          <div style={{
-            marginTop: '16px',
-            opacity: listProgressDone ? 0 : 1,
-            transition: 'opacity 1.2s ease',
-          }}>
-            {listProgress.map((p, i) => {
-              const isActive = listLoading && i === listProgress.length - 1;
-              return (
-                <div key={p.step} style={{
-                  display: 'flex', alignItems: 'center', gap: '10px',
-                  padding: '5px 0',
-                  color: isActive ? '#ffffff' : '#6b7280',
-                  fontSize: '14px',
-                  transition: 'color 0.3s',
-                }}>
-                  {isActive ? (
-                    <svg width="14" height="14" viewBox="0 0 24 24" style={{ flexShrink: 0, animation: 'spin 0.8s linear infinite' }}>
-                      <circle cx="12" cy="12" r="10" fill="none" stroke="#2a2d35" strokeWidth="3"/>
-                      <path d="M12 2a10 10 0 0 1 10 10" fill="none" stroke="#00c030" strokeWidth="3" strokeLinecap="round"/>
-                    </svg>
-                  ) : (
-                    <svg width="14" height="14" viewBox="0 0 24 24" style={{ flexShrink: 0 }}>
-                      <circle cx="12" cy="12" r="10" fill="#00c030" opacity="0.15"/>
-                      <path d="M7 12l3.5 3.5L17 8" fill="none" stroke="#00c030" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
-                    </svg>
-                  )}
-                  {p.message}
-                </div>
-              );
-            })}
-          </div>
-        )}
-
-        {listError && (
-          <div style={{ marginTop: '12px', padding: '10px 12px', backgroundColor: '#2d1515', border: '1px solid #5c2020', borderRadius: '8px', color: '#f87171', fontSize: '13px' }}>
-            {listError}
-          </div>
-        )}
-      </div>
+        <ImportProgress progress={listImport.progress} error={listImport.error} loading={listImport.loading} progressDone={listImport.progressDone} />
+      </Card>
 
       {/* Imported lists */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '24px' }}>
+      <div className="flex flex-col gap-2 mb-6">
         {lists.map((list) => (
-          <div
+          <EntityCard
             key={list.id}
-            className="friend-card"
-            style={{
-              backgroundColor: '#1e2128',
-              border: '1px solid #2a2d35',
-              borderRadius: '16px',
-              padding: '16px 20px',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '12px',
+            avatarNode={
+              <div className="w-12 h-12 rounded-full bg-bg-card-hover border border-border-strong flex items-center justify-center text-22">
+                🎬
+              </div>
+            }
+            displayName={list.custom_name ?? list.name}
+            subtitle={list.custom_name ? list.name : undefined}
+            nameEllipsis
+            chips={[
+              { label: `${list.movies.length} films` },
+              { label: `by ${list.owner}`, dimmed: true },
+            ]}
+            lastSynced={list.last_synced}
+            tmdbEnriched={list.tmdb_enriched}
+            timeAgo={timeAgo}
+            isRenaming={renamingListId === list.id}
+            renameValue={renameValue}
+            renamePlaceholder={list.name}
+            onRenameChange={setRenameValue}
+            onRenameKeyDown={(e) => {
+              if (e.key === 'Enter') handleRenameList(list.id, renameValue);
+              if (e.key === 'Escape') setRenamingListId(null);
             }}
-          >
-            {/* Film emoji avatar */}
-            <div style={{
-              width: '48px', height: '48px', borderRadius: '50%',
-              backgroundColor: '#252830', border: '1px solid #3a3d45',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontSize: '22px', flexShrink: 0,
-            }}>
-              🎬
-            </div>
-
-            {/* Info */}
-            <div style={{ flex: 1, minWidth: 0 }}>
-              {renamingListId === list.id ? (
-                <div style={{ display: 'flex', gap: '6px', marginBottom: '6px' }}>
-                  <input
-                    autoFocus
-                    value={renameValue}
-                    onChange={(e) => setRenameValue(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') handleRenameList(list.id, renameValue);
-                      if (e.key === 'Escape') setRenamingListId(null);
-                    }}
-                    placeholder={list.name}
-                    style={{
-                      flex: 1, minWidth: 0,
-                      backgroundColor: '#0d0f12', border: '1px solid #2a2d35',
-                      borderRadius: '6px', color: '#ffffff', fontSize: '14px',
-                      padding: '4px 8px', outline: 'none',
-                    }}
-                  />
-                  <button
-                    onClick={() => handleRenameList(list.id, renameValue)}
-                    style={{ padding: '4px 10px', borderRadius: '6px', fontSize: '13px', fontWeight: 600, cursor: 'pointer', border: 'none', backgroundColor: '#00c030', color: '#ffffff' }}
-                  >
-                    Save
-                  </button>
-                  <button
-                    onClick={() => setRenamingListId(null)}
-                    style={{ padding: '4px 10px', borderRadius: '6px', fontSize: '13px', cursor: 'pointer', border: '1px solid #2a2d35', backgroundColor: 'transparent', color: '#9ba3af' }}
-                  >
-                    Cancel
-                  </button>
-                </div>
-              ) : (
-                <div style={{ marginBottom: '6px' }}>
-                  <div style={{ fontWeight: 700, color: '#ffffff', fontSize: '16px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                    {list.custom_name ?? list.name}
-                  </div>
-                  {list.custom_name && (
-                    <div style={{ fontSize: '12px', color: '#6b7280', marginTop: '2px' }}>
-                      {list.name}
-                    </div>
-                  )}
-                </div>
-              )}
-              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                <span style={{
-                  fontSize: '13px', color: '#9ba3af',
-                  backgroundColor: '#252830', borderRadius: '6px',
-                  padding: '2px 8px', whiteSpace: 'nowrap',
-                }}>
-                  {list.movies.length} films
-                </span>
-                <span style={{
-                  fontSize: '13px', color: '#6b7280',
-                  backgroundColor: '#252830', borderRadius: '6px',
-                  padding: '2px 8px', whiteSpace: 'nowrap',
-                }}>
-                  by {list.owner}
-                </span>
-              </div>
-              <div style={{ color: '#6b7280', fontSize: '12px', marginTop: '6px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                synced {timeAgo(list.last_synced)}
-                {!list.tmdb_enriched && (
-                  <span style={{ fontSize: '11px', color: '#6b7280', backgroundColor: '#252830', border: '1px solid #2a2d35', borderRadius: '4px', padding: '1px 6px' }}>
-                    Enriching…
-                  </span>
-                )}
-              </div>
-            </div>
-
-            {/* Actions */}
-            <div style={{ display: 'flex', gap: '2px', flexShrink: 0 }}>
-              <button
-                onClick={() => { setRenamingListId(list.id); setRenameValue(list.custom_name ?? ''); }}
-                title="Rename"
-                className="icon-btn"
-                style={{
-                  width: '32px', height: '32px', borderRadius: '8px',
-                  backgroundColor: 'transparent', border: 'none', cursor: 'pointer',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  color: '#9ba3af', transition: 'background-color 0.15s',
-                }}
-                onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#252830')}
-                onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
-              >
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/>
-                  <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
-                </svg>
-              </button>
-              <button
-                onClick={() => handleSyncList(list.id)}
-                disabled={syncingListId === list.id}
-                title="Re-import"
-                className="icon-btn"
-                style={{
-                  width: '32px', height: '32px', borderRadius: '8px',
-                  backgroundColor: 'transparent', border: 'none', cursor: 'pointer',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  color: '#9ba3af', transition: 'background-color 0.15s',
-                  opacity: syncingListId === list.id ? 0.5 : 1,
-                }}
-                onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#252830')}
-                onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
-              >
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
-                  style={syncingListId === list.id ? { animation: 'spin 1s linear infinite' } : undefined}>
-                  <path d="M23 4v6h-6M1 20v-6h6"/>
-                  <path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/>
-                </svg>
-              </button>
-              <button
-                onClick={() => handleDeleteList(list.id, list.name)}
-                disabled={deletingListId === list.id}
-                title="Remove"
-                className="icon-btn"
-                style={{
-                  width: '32px', height: '32px', borderRadius: '8px',
-                  backgroundColor: 'transparent', border: 'none', cursor: 'pointer',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  color: '#9ba3af', transition: 'background-color 0.15s',
-                  opacity: deletingListId === list.id ? 0.5 : 1,
-                }}
-                onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#2d1515')}
-                onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
-              >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <polyline points="3 6 5 6 21 6"/>
-                  <path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/>
-                  <path d="M10 11v6M14 11v6"/>
-                  <path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2"/>
-                </svg>
-              </button>
-            </div>
-          </div>
+            onRenameConfirm={() => handleRenameList(list.id, renameValue)}
+            onRenameCancel={() => setRenamingListId(null)}
+            onRenameStart={() => { setRenamingListId(list.id); setRenameValue(list.custom_name ?? ''); }}
+            isSyncing={syncingListId === list.id}
+            onSync={() => handleSyncList(list.id)}
+            isDeleting={deletingListId === list.id}
+            onDelete={() => handleDeleteList(list.id, list.name)}
+          />
         ))}
       </div>
 
       {/* TMDB API key panel */}
-      <div style={{
-        backgroundColor: '#1e2128',
-        border: '1px solid #2a2d35',
-        borderRadius: '16px',
-        padding: '24px',
-      }}>
-        <h2 style={{ fontSize: '17px', fontWeight: 700, color: '#ffffff', marginBottom: '6px' }}>
+      <Card className="p-6">
+        <h2 className="text-17 font-bold text-text-primary mb-[6px]">
           TMDB API Key
         </h2>
-        <p style={{ fontSize: '14px', color: '#9ba3af', marginBottom: '20px', lineHeight: 1.6 }}>
+        <p className="text-sm text-text-secondary mb-5 leading-relaxed">
           Optional. Enables movie posters and ratings. Get a free key at{' '}
-          <span style={{ color: '#00c030' }}>themoviedb.org/settings/api</span>
+          <span className="text-accent-green">themoviedb.org/settings/api</span>
         </p>
-        <form onSubmit={handleSaveTmdb} className="tmdb-form" style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-          <input
+        <form onSubmit={handleSaveTmdb} className="flex flex-col gap-2">
+          <InputField
             type="password"
             value={tmdbKey}
             onChange={(e) => { setTmdbKey(e.target.value); setTmdbSaved(false); }}
             placeholder="Paste your API key here"
-            style={{
-              width: '100%',
-              backgroundColor: '#0d0f12',
-              border: '1px solid #2a2d35',
-              borderRadius: '8px',
-              height: '44px',
-              padding: '0 14px',
-              color: '#ffffff',
-              fontSize: '14px',
-              outline: 'none',
-            }}
+            className="w-full h-11 px-[14px]"
           />
-          <button
+          <PrimaryButton
             type="submit"
             disabled={tmdbSaving}
-            style={{
-              width: '100%',
-              height: '44px',
-              backgroundColor: tmdbSaved ? '#005518' : '#00c030',
-              color: '#ffffff',
-              fontWeight: 700,
-              fontSize: '14px',
-              border: 'none',
-              borderRadius: '8px',
-              cursor: 'pointer',
-              transition: 'background-color 0.15s',
-            }}
+            className={cn('text-sm', tmdbSaved && 'bg-accent-green-disabled')}
           >
             {tmdbSaved ? '✓ Saved' : tmdbSaving ? 'Saving...' : 'Save'}
-          </button>
+          </PrimaryButton>
         </form>
-      </div>
+      </Card>
     </div>
   );
 }

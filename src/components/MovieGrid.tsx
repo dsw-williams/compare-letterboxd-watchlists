@@ -30,18 +30,17 @@ export default function MovieGrid({ items, totalSelected, allFriends, selectedFr
 
   if (displayItems.length === 0) {
     return (
-      <div style={{ textAlign: 'center', padding: '60px 0', color: '#6b7280', fontSize: '14px' }}>
+      <div className="text-center py-[60px] text-text-tertiary text-sm">
         No films found for this selection.
       </div>
     );
   }
 
   return (
-    <div className="movie-grid" style={{
-      display: 'grid',
-      gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))',
-      gap: '12px',
-    }}>
+    <div
+      className="grid gap-3"
+      style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))' }}
+    >
       {displayItems.map(({ movie, friends }) => (
         <MovieCard
           key={movie.slug}

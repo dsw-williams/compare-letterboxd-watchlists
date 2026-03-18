@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getLists, upsertList } from '@/lib/storage';
+import { getLists, upsertList, getSettings } from '@/lib/storage';
 import { fetchList } from '@/lib/letterboxd';
-import { enrichAndSaveList } from '@/lib/tmdb';
-import { getSettings } from '@/lib/storage';
+import { createStreamingResponse, maybeTriggerListEnrichment } from '@/lib/streaming';
 
 export async function GET() {
   const lists = await getLists();
@@ -40,44 +39,27 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'List already imported' }, { status: 409 });
   }
 
-  const encoder = new TextEncoder();
-  const stream = new ReadableStream({
-    async start(controller) {
-      function send(data: object) {
-        controller.enqueue(encoder.encode(JSON.stringify(data) + '\n'));
-      }
+  return createStreamingResponse(async (send) => {
+    send({ step: 'scraping', message: `Scraping list from ${owner}...` });
+    const { title, movies } = await fetchList(owner, slug);
 
-      try {
-        send({ step: 'scraping', message: `Scraping list from ${owner}...` });
-        const { title, movies } = await fetchList(owner, slug);
+    const settings = await getSettings();
 
-        const settings = await getSettings();
+    const list = {
+      id,
+      name: title,
+      owner,
+      slug,
+      movies,
+      last_synced: new Date().toISOString(),
+      // tmdb_enriched: true means "no enrichment pending".
+      // When there is no API key, enrichment is not possible, so mark it complete.
+      tmdb_enriched: !settings.tmdb_api_key,
+    };
 
-        const list = {
-          id,
-          name: title,
-          owner,
-          slug,
-          movies,
-          last_synced: new Date().toISOString(),
-          tmdb_enriched: !settings.tmdb_api_key,
-        };
+    await upsertList(list);
+    send({ step: 'done' });
 
-        await upsertList(list);
-        send({ step: 'done' });
-        controller.close();
-
-        if (settings.tmdb_api_key) {
-          enrichAndSaveList(id, settings.tmdb_api_key).catch(console.error);
-        }
-      } catch (err) {
-        send({ step: 'error', message: err instanceof Error ? err.message : 'Unknown error' });
-        controller.close();
-      }
-    },
-  });
-
-  return new Response(stream, {
-    headers: { 'Content-Type': 'text/plain; charset=utf-8' },
+    maybeTriggerListEnrichment(id, settings);
   });
 }

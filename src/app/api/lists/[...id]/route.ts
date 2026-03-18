@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { deleteList, upsertList, getLists } from '@/lib/storage';
+import { deleteList, upsertList, getLists, getSettings } from '@/lib/storage';
 import { fetchList } from '@/lib/letterboxd';
-import { enrichAndSaveList } from '@/lib/tmdb';
-import { getSettings } from '@/lib/storage';
+import { maybeTriggerListEnrichment } from '@/lib/streaming';
 
 async function resolveId(params: Promise<{ id: string[] }>) {
   const { id } = await params;
@@ -29,12 +28,12 @@ export async function POST(
     name: title,
     movies,
     last_synced: new Date().toISOString(),
+    // tmdb_enriched: true means "no enrichment pending".
+    // When there is no API key, enrichment is not possible, so mark it complete.
     tmdb_enriched: !settings.tmdb_api_key,
   });
 
-  if (settings.tmdb_api_key) {
-    enrichAndSaveList(listId, settings.tmdb_api_key).catch(console.error);
-  }
+  maybeTriggerListEnrichment(listId, settings);
 
   return NextResponse.json({ ok: true });
 }
