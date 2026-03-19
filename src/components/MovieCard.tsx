@@ -34,10 +34,12 @@ export default function MovieCard({ movie, friends, totalSelected, allFriends, f
   const stars = starsFromRating(movie.rating);
 
   return (
-    <div
-      onClick={() => window.open(movie.letterboxd_url, '_blank')}
+    <a
+      href={movie.letterboxd_url}
+      target="_blank"
+      rel="noopener noreferrer"
       className={clsx(
-        'cursor-pointer transition-[opacity,transform] duration-150 hover:scale-[1.03]',
+        'block cursor-pointer transition-[opacity,transform] duration-150 hover:scale-[1.03]',
         faded && 'opacity-40'
       )}
     >
@@ -115,6 +117,6 @@ export default function MovieCard({ movie, friends, totalSelected, allFriends, f
           {stars ? ` · ${stars}` : ''}
         </div>
       </div>
-    </div>
+    </a>
   );
 }
