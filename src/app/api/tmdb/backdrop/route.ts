@@ -37,8 +37,8 @@ export async function GET() {
   try {
     // Fetch two pages in parallel for a larger pool
     const [page1Res, page2Res] = await Promise.all([
-      fetch(`${BASE_URL}/movie/popular?api_key=${apiKey}&language=en-US&page=1`, { cache: 'no-store' }),
-      fetch(`${BASE_URL}/movie/popular?api_key=${apiKey}&language=en-US&page=2`, { cache: 'no-store' }),
+      fetch(`${BASE_URL}/movie/top_rated?api_key=${apiKey}&language=en-US&page=1`, { cache: 'no-store' }),
+      fetch(`${BASE_URL}/movie/top_rated?api_key=${apiKey}&language=en-US&page=2`, { cache: 'no-store' }),
     ]);
 
     const allMovies: TMDBListMovie[] = [];
