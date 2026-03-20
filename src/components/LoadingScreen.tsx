@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 
 type Phase = 'open' | 'action' | 'gone';
 
-const MIN_MS = 1200;
+const MIN_MS = 600;
 const FALLBACK_MS = 4000;
 
 export default function LoadingScreen() {
@@ -41,7 +41,6 @@ export default function LoadingScreen() {
         flexDirection: 'column',
         alignItems: 'center',
         justifyContent: 'center',
-        gap: '1rem',
         opacity: phase === 'action' ? 0 : 1,
         transition: phase === 'action' ? 'opacity 400ms ease 500ms' : undefined,
       }}
@@ -93,13 +92,6 @@ export default function LoadingScreen() {
         </g>
       </svg>
 
-      {/* Text — same style for both states */}
-      <p
-        className="text-text-secondary text-sm tracking-widest uppercase"
-        style={{ fontFamily: 'var(--font-body), system-ui, sans-serif' }}
-      >
-        {phase === 'open' ? 'And...' : 'Action!'}
-      </p>
     </div>
   );
 }
