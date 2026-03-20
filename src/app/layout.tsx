@@ -2,7 +2,6 @@ import type { Metadata, Viewport } from 'next';
 import { Inter, Playfair_Display } from 'next/font/google';
 import { headers } from 'next/headers';
 import './globals.css';
-import LoadingScreen from '@/components/LoadingScreen';
 
 const inter = Inter({
   subsets: ['latin'],
@@ -50,7 +49,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" className={`${inter.variable} ${playfair.variable}`}>
       <body style={{ backgroundColor: '#141414', minHeight: '100vh' }}>
-        <LoadingScreen />
         <main>{children}</main>
       </body>
     </html>

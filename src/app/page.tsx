@@ -32,8 +32,7 @@ export default function HomePage() {
   const [selectedLists, setSelectedLists] = useState<string[]>([]);
   const [overlap, setOverlap] = useState<OverlapEntry[]>([]);
   const [loading, setLoading] = useState(false);
-  const [initialLoading, setInitialLoading] = useState(true);
-  const [activeGenres, setActiveGenres] = useState<string[]>([]);
+const [activeGenres, setActiveGenres] = useState<string[]>([]);
   const [watchedFilter, setWatchedFilter] = useState<'show' | 'fade' | 'hide'>('show');
   const [sortOrder, setSortOrder] = useState<'random' | 'rating_desc' | 'rating_asc' | 'runtime_desc' | 'runtime_asc' | 'title'>('random');
   const [randomOrder, setRandomOrder] = useState<Map<string, number>>(new Map());
@@ -42,11 +41,6 @@ export default function HomePage() {
 
   // Load friends and lists on mount
   useEffect(() => {
-    let friendsDone = false;
-    let listsDone = false;
-    function checkDone() {
-      if (friendsDone && listsDone) setInitialLoading(false);
-    }
     fetch('/api/friends')
       .then((r) => r.json())
       .then((data: Friend[]) => {
@@ -54,20 +48,11 @@ export default function HomePage() {
         if (data.length > 0 && data.length <= 4) {
           setSelected(data.map((f) => f.username));
         }
-      })
-      .finally(() => { friendsDone = true; checkDone(); });
+      });
     fetch('/api/lists')
       .then((r) => r.json())
-      .then((data: LetterboxdList[]) => setLists(data))
-      .finally(() => { listsDone = true; checkDone(); });
+      .then((data: LetterboxdList[]) => setLists(data));
   }, []);
-
-  // Signal loading screen once initial data is ready
-  useEffect(() => {
-    if (!initialLoading) {
-      window.dispatchEvent(new CustomEvent('app:ready'));
-    }
-  }, [initialLoading]);
 
   // Randomise order once per data load
   useEffect(() => {
@@ -213,7 +198,7 @@ export default function HomePage() {
   const timeOfDay = hour < 12 ? 'this morning' : hour < 17 ? 'this afternoon' : hour < 20 ? 'this evening' : 'tonight';
 
   // Show landing page when there is no data yet (after all hooks)
-  if (!initialLoading && friends.length === 0 && lists.length === 0) {
+  if (friends.length === 0 && lists.length === 0) {
     return <LandingPage />;
   }
 
