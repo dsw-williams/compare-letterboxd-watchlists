@@ -14,7 +14,7 @@ const ENV_LABELS: Record<EnvType, string> = {
 
 const ENV_PROSE: Record<EnvType, string> = {
   docker:
-    'Create a .env file in the same directory as your docker-compose.yml, add your TMDB API key, then restart the container.',
+    'Set TMDB_API_KEY as an environment variable for your container, then restart it. You can do this via a .env file with Docker Compose, or directly in your Docker GUI (Unraid, Portainer, Synology, etc.).',
   'local-dev':
     'Add your TMDB API key to a .env.local file in the project root, then restart the dev server.',
   production:
@@ -22,11 +22,16 @@ const ENV_PROSE: Record<EnvType, string> = {
 };
 
 const ENV_CODE: Record<EnvType, string> = {
-  docker: `# Create a .env file next to docker-compose.yml:
+  docker: `# Option A — Docker Compose (.env file next to docker-compose.yml):
 TMDB_API_KEY=your_tmdb_api_key_here
+# Then: docker compose down && docker compose up -d
 
-# Then restart the container:
-docker compose down && docker compose up -d`,
+# Option B — Docker run (--env flag):
+docker run -e TMDB_API_KEY=your_key ...
+
+# Option C — Docker GUI (Unraid, Portainer, Synology, etc.):
+# Add TMDB_API_KEY as an environment variable in the container
+# settings UI, then restart the container.`,
   'local-dev': `# Add to .env.local in the project root:
 TMDB_API_KEY=your_tmdb_api_key_here
 
@@ -55,7 +60,7 @@ export default function SetupPageClient({ env }: Props) {
       </div>
 
       {/* Sixth Sense headline */}
-      <h1 className="font-display text-text-primary font-black text-center text-[2.2rem] sm:text-5xl leading-[1.1] mb-10">
+      <h1 className="text-text-primary font-black text-center text-[2.2rem] sm:text-5xl leading-[1.1] mb-10">
         I see dead pages&hellip;
       </h1>
       

@@ -1,5 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 
+// Must use Node.js runtime so runtime-injected env vars (e.g. from Docker/Unraid)
+// are visible via process.env. Edge Runtime only sees build-time env vars.
+export const runtime = 'nodejs';
+
 const ALWAYS_ALLOW = [
   '/setup',
   '/_next/',

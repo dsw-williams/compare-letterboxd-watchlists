@@ -98,6 +98,10 @@ docker run -d \
   compare-letterboxd-watchlists
 ```
 
+### Unraid / Portainer / Docker GUI
+
+If you're running via a Docker GUI (Unraid, Portainer, Synology, etc.), set `TMDB_API_KEY` as an environment variable directly in the container settings UI — no `.env` file needed. After adding the variable, restart the container and the app will pick it up.
+
 ### Docker Compose
 
 A `docker-compose.yml` is included. Set up your env file first:
