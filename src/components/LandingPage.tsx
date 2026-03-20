@@ -213,7 +213,7 @@ export default function LandingPage() {
                 </span>
               </div>
 
-              <h1 className="font-display text-text-primary text-center font-black leading-[1.1] mb-8 text-[2.6rem] sm:text-5xl">
+              <h1 className="text-text-primary text-center font-black leading-[1.1] mb-8 text-[2.6rem] sm:text-5xl">
                 Compare Letterboxd watchlists. Pick what to watch.
               </h1>
 
@@ -289,7 +289,7 @@ export default function LandingPage() {
                 {/* ── Friends step ──────────────────────── */}
                 {step === 'friends' && (
                   <>
-                    <h2 className="font-display text-text-primary font-black text-2xl mb-1">Add your friends</h2>
+                    <h2 className="text-text-primary font-black text-2xl mb-1">Add your friends</h2>
                     <p className="text-text-tertiary text-sm mb-5">Add Letterboxd usernames. You can add more later.</p>
 
                     <div className="flex items-center bg-bg-input border border-border-subtle rounded-lg h-11 overflow-hidden mb-3">
@@ -355,7 +355,7 @@ export default function LandingPage() {
                 {/* ── Lists step ────────────────────────── */}
                 {step === 'lists' && (
                   <>
-                    <h2 className="font-display text-text-primary font-black text-2xl mb-1">Track Letterboxd lists</h2>
+                    <h2 className="text-text-primary font-black text-2xl mb-1">Track Letterboxd lists</h2>
                     <p className="text-text-tertiary text-sm mb-5">Add lists to discover films together. You can add more later.</p>
 
                     {DEFAULT_LISTS.length > 0 && (
@@ -408,7 +408,7 @@ export default function LandingPage() {
                         <path d="M2 8L7 13L18 2" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
                       </svg>
                     </div>
-                    <h2 className="font-display text-text-primary font-black text-2xl mb-2">You&apos;re all set!</h2>
+                    <h2 className="text-text-primary font-black text-2xl mb-2">You&apos;re all set!</h2>
                     <p className="text-text-tertiary text-sm">Taking you to your watchlists…</p>
                   </>
                 ) : (
@@ -417,7 +417,7 @@ export default function LandingPage() {
                       className="w-10 h-10 border-2 border-border-subtle border-t-accent-green rounded-full mx-auto mb-6"
                       style={{ animation: 'spin 0.9s linear infinite' }}
                     />
-                    <h2 className="font-display text-text-primary font-black text-2xl mb-3">Setting up…</h2>
+                    <h2 className="text-text-primary font-black text-2xl mb-3">Setting up…</h2>
                     {importStatus && (
                       <p className="text-text-secondary text-sm mb-2 min-h-[20px]">{importStatus}</p>
                     )}

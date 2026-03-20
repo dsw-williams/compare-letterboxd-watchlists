@@ -62,6 +62,13 @@ export default function HomePage() {
       .finally(() => { listsDone = true; checkDone(); });
   }, []);
 
+  // Signal loading screen once initial data is ready
+  useEffect(() => {
+    if (!initialLoading) {
+      window.dispatchEvent(new CustomEvent('app:ready'));
+    }
+  }, [initialLoading]);
+
   // Randomise order once per data load
   useEffect(() => {
     const slugs = overlap.map((e) => e.movie.slug);

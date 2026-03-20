@@ -8,3 +8,5 @@ node_modules/
 .claude/
 tsconfig.tsbuildinfo
 CLAUDE.md
+src/app/setup-preview/
+src/app/loading-preview/

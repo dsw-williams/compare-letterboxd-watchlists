@@ -8,7 +8,7 @@ A personal, local-only web app to compare Letterboxd watchlists across friends a
 - Fade or hide films you've already watched
 - Highlights each friend's top-4 favourite films with a gold border
 - Set custom display names for friends
-- Movie posters, ratings, runtime, and director via TMDB (requires a free API key — see setup)
+- Movie posters, ratings, runtime, and director via TMDB (**requires a free API key — the app will not load without it**)
 
 ---
 
@@ -51,7 +51,7 @@ cp .env.example .env.local
 
 Then open `.env.local` and replace `your_tmdb_api_key_here` with your actual key. Get a free key at [themoviedb.org/settings/api](https://www.themoviedb.org/settings/api).
 
-> The app runs without a TMDB key but movie posters, ratings, runtime, and director info will be missing.
+> **Required:** The app will not load without a TMDB API key — all routes redirect to a setup page with instructions if the key is missing.
 
 ### 4. Start the app
 
