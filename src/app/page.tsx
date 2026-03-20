@@ -6,6 +6,8 @@ import FriendSelector from '@/components/FriendSelector';
 import MovieGrid from '@/components/MovieGrid';
 import Card from '@/components/ui/Card';
 import PillButton from '@/components/ui/PillButton';
+import IconButton from '@/components/ui/IconButton';
+import { Shuffle } from 'lucide-react';
 import LandingPage from '@/components/LandingPage';
 import Nav from '@/components/Nav';
 
@@ -33,8 +35,8 @@ export default function HomePage() {
   const [overlap, setOverlap] = useState<OverlapEntry[]>([]);
   const [loading, setLoading] = useState(false);
 const [activeGenres, setActiveGenres] = useState<string[]>([]);
-  const [watchedFilter, setWatchedFilter] = useState<'show' | 'fade' | 'hide'>('show');
-  const [sortOrder, setSortOrder] = useState<'random' | 'rating_desc' | 'rating_asc' | 'runtime_desc' | 'runtime_asc' | 'title'>('random');
+  const [watchedFilter, setWatchedFilter] = useState<'show' | 'fade' | 'hide'>('fade');
+  const [sortOrder, setSortOrder] = useState<'random' | 'rating_desc' | 'rating_asc' | 'runtime_desc' | 'runtime_asc'>('random');
   const [randomOrder, setRandomOrder] = useState<Map<string, number>>(new Map());
 
   const listMode = selectedLists.length > 0;
@@ -56,6 +58,11 @@ const [activeGenres, setActiveGenres] = useState<string[]>([]);
 
   // Randomise order once per data load
   useEffect(() => {
+    reshuffleOrder();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [overlap]);
+
+  function reshuffleOrder() {
     const slugs = overlap.map((e) => e.movie.slug);
     const indices = slugs.map((_, i) => i);
     for (let i = indices.length - 1; i > 0; i--) {
@@ -63,7 +70,8 @@ const [activeGenres, setActiveGenres] = useState<string[]>([]);
       [indices[i], indices[j]] = [indices[j], indices[i]];
     }
     setRandomOrder(new Map(slugs.map((slug, i) => [slug, indices[i]])));
-  }, [overlap]);
+    setSortOrder('random');
+  }
 
   // Build display entries whenever selection changes
   useEffect(() => {
@@ -179,8 +187,7 @@ const [activeGenres, setActiveGenres] = useState<string[]>([]);
       if (sortOrder === 'rating_desc') return (b.movie.rating ?? 0) - (a.movie.rating ?? 0);
       if (sortOrder === 'rating_asc') return (a.movie.rating ?? 0) - (b.movie.rating ?? 0);
       if (sortOrder === 'runtime_desc') return (b.movie.runtime ?? 0) - (a.movie.runtime ?? 0);
-      if (sortOrder === 'runtime_asc') return (a.movie.runtime ?? 0) - (b.movie.runtime ?? 0);
-      return a.movie.title.localeCompare(b.movie.title);
+      return (a.movie.runtime ?? 0) - (b.movie.runtime ?? 0);
     });
   }
 
@@ -321,13 +328,13 @@ const [activeGenres, setActiveGenres] = useState<string[]>([]);
               >
                 {sortOrder === 'runtime_desc' ? 'Runtime ↓' : sortOrder === 'runtime_asc' ? 'Runtime ↑' : 'Runtime'}
               </PillButton>
-              <PillButton
-                isActive={sortOrder === 'title'}
-                onClick={() => setSortOrder((s) => s === 'title' ? 'random' : 'title')}
-                className="px-3 py-[5px]"
+              <IconButton
+                onClick={reshuffleOrder}
+                title="Shuffle"
+                className={sortOrder === 'random' ? 'text-text-primary' : 'text-text-secondary hover:text-text-primary'}
               >
-                Title
-              </PillButton>
+                <Shuffle size={16} />
+              </IconButton>
             </div>
             {/* Divider — desktop only */}
             <div className="hidden sm:block w-px h-4 bg-border-subtle" />

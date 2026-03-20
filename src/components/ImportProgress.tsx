@@ -1,4 +1,5 @@
 import clsx from 'clsx';
+import { Loader2, Check } from 'lucide-react';
 
 type ProgressStep = { step: string; message: string };
 
@@ -28,15 +29,9 @@ export default function ImportProgress({ progress, error, loading, progressDone 
                 )}
               >
                 {isActive ? (
-                  <svg width="14" height="14" viewBox="0 0 24 24" className="shrink-0 animate-spin">
-                    <circle cx="12" cy="12" r="10" fill="none" stroke="#2a2d35" strokeWidth="3"/>
-                    <path d="M12 2a10 10 0 0 1 10 10" fill="none" stroke="#00c030" strokeWidth="3" strokeLinecap="round"/>
-                  </svg>
+                  <Loader2 size={14} className="shrink-0 animate-spin" color="#00c030" />
                 ) : (
-                  <svg width="14" height="14" viewBox="0 0 24 24" className="shrink-0">
-                    <circle cx="12" cy="12" r="10" fill="#00c030" opacity="0.15"/>
-                    <path d="M7 12l3.5 3.5L17 8" fill="none" stroke="#00c030" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
-                  </svg>
+                  <Check size={14} className="shrink-0" color="#00c030" />
                 )}
                 {p.message}
               </div>

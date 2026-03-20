@@ -1,5 +1,6 @@
 'use client';
 import clsx from 'clsx';
+import { Check } from 'lucide-react';
 import { Friend } from '@/lib/types';
 import Card from '@/components/ui/Card';
 
@@ -69,9 +70,7 @@ export default function FriendSelector({ friends, selected, onToggle, onSelectAl
                 {/* Checkmark badge */}
                 {isSelected && (
                   <div className="absolute bottom-0 right-0 w-5 h-5 rounded-full bg-accent-green border-2 border-bg-primary flex items-center justify-center">
-                    <svg width="10" height="10" viewBox="0 0 12 12" fill="white">
-                      <path d="M2 6l3 3 5-5" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
-                    </svg>
+                    <Check size={10} color="white" strokeWidth={2.5} />
                   </div>
                 )}
               </div>

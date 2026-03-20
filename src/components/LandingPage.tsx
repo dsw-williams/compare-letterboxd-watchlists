@@ -1,5 +1,6 @@
 'use client';
 import { useState, useEffect, useRef } from 'react';
+import { Check, ChevronLeft } from 'lucide-react';
 import { DEFAULT_LISTS } from '@/config/defaultLists';
 
 interface PosterMovie {
@@ -68,9 +69,7 @@ function CollapsedCard({
       }`}
     >
       <div className="w-5 h-5 rounded-full bg-accent-green flex items-center justify-center shrink-0">
-        <svg width="10" height="8" viewBox="0 0 10 8" fill="none">
-          <path d="M1 4L3.5 6.5L9 1" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-        </svg>
+        <Check size={10} color="white" strokeWidth={2} />
       </div>
       <span className="text-sm text-text-primary font-medium">{title}</span>
       <span className="text-sm text-text-tertiary">— {summary}</span>
@@ -280,9 +279,7 @@ export default function LandingPage() {
                   onClick={goBack}
                   className="flex items-center gap-1 text-text-tertiary text-sm hover:text-text-primary transition-colors mb-4"
                 >
-                  <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                    <path d="M9 2L4 7L9 12" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
+                  <ChevronLeft size={16} />
                   Back
                 </button>
 
@@ -404,9 +401,7 @@ export default function LandingPage() {
                 {importDone ? (
                   <>
                     <div className="w-12 h-12 rounded-full bg-accent-green flex items-center justify-center mx-auto mb-6">
-                      <svg width="20" height="16" viewBox="0 0 20 16" fill="none">
-                        <path d="M2 8L7 13L18 2" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-                      </svg>
+                      <Check size={24} color="white" strokeWidth={2.5} />
                     </div>
                     <h2 className="text-text-primary font-black text-2xl mb-2">You&apos;re all set!</h2>
                     <p className="text-text-tertiary text-sm">Taking you to your watchlists…</p>
