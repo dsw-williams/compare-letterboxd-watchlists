@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { getSettings } from '@/lib/storage';
 
 export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
 
 const BASE_URL = 'https://api.themoviedb.org/3';
 const BACKDROP_BASE = 'https://image.tmdb.org/t/p/original';
@@ -36,14 +37,17 @@ export async function GET() {
   try {
     // Fetch two pages in parallel for a larger pool
     const [page1Res, page2Res] = await Promise.all([
-      fetch(`${BASE_URL}/movie/popular?api_key=${apiKey}&language=en-US&page=1`),
-      fetch(`${BASE_URL}/movie/popular?api_key=${apiKey}&language=en-US&page=2`),
+      fetch(`${BASE_URL}/movie/popular?api_key=${apiKey}&language=en-US&page=1`, { cache: 'no-store' }),
+      fetch(`${BASE_URL}/movie/popular?api_key=${apiKey}&language=en-US&page=2`, { cache: 'no-store' }),
     ]);
 
     const allMovies: TMDBListMovie[] = [];
+    let tmdbError: string | null = null;
     if (page1Res.ok) {
       const d = await page1Res.json();
       allMovies.push(...(d.results ?? []));
+    } else {
+      tmdbError = `TMDB ${page1Res.status}: ${await page1Res.text().catch(() => 'no body')}`;
     }
     if (page2Res.ok) {
       const d = await page2Res.json();
@@ -51,7 +55,7 @@ export async function GET() {
     }
 
     if (allMovies.length === 0) {
-      return NextResponse.json({ backdrop_url: null, poster_movies: [] });
+      return NextResponse.json({ backdrop_url: null, poster_movies: [], debug: tmdbError });
     }
 
     const shuffled = shuffle(allMovies);
@@ -71,7 +75,8 @@ export async function GET() {
 
       try {
         const detailRes = await fetch(
-          `${BASE_URL}/movie/${backdropMovie.id}?append_to_response=credits&api_key=${apiKey}`
+          `${BASE_URL}/movie/${backdropMovie.id}?append_to_response=credits&api_key=${apiKey}`,
+          { cache: 'no-store' }
         );
         if (detailRes.ok) {
           const detail = await detailRes.json();
@@ -99,7 +104,7 @@ export async function GET() {
       backdrop_url,
       poster_movies: posterMovies,
     });
-  } catch {
-    return NextResponse.json({ backdrop_url: null, poster_movies: [] });
+  } catch (err) {
+    return NextResponse.json({ backdrop_url: null, poster_movies: [], debug: String(err) });
   }
 }
