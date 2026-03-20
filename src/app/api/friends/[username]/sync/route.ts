@@ -1,5 +1,7 @@
 import { NextRequest } from 'next/server';
 import { getFriend, upsertFriend, getSettings } from '@/lib/storage';
+
+export const runtime = 'nodejs';
 import { fetchRecentWatched, fetchWatchlist, fetchFavourites } from '@/lib/letterboxd';
 import { createStreamingResponse, maybeTriggerFriendEnrichment } from '@/lib/streaming';
 

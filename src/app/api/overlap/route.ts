@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getFriend } from '@/lib/storage';
+
+export const runtime = 'nodejs';
 import { Movie } from '@/lib/types';
 
 export async function GET(req: NextRequest) {

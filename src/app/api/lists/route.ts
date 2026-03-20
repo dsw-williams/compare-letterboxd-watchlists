@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getLists, upsertList, getSettings } from '@/lib/storage';
+
+export const runtime = 'nodejs';
 import { fetchList } from '@/lib/letterboxd';
 import { createStreamingResponse, maybeTriggerListEnrichment } from '@/lib/streaming';
 

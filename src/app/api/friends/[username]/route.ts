@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { deleteFriend, getFriend, upsertFriend } from '@/lib/storage';
 
+export const runtime = 'nodejs';
+
 export async function DELETE(
   _req: NextRequest,
   { params }: { params: { username: string } }

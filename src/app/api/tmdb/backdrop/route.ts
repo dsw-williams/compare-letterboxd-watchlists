@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import { getSettings } from '@/lib/storage';
 
+export const runtime = 'nodejs';
+
 const BASE_URL = 'https://api.themoviedb.org/3';
 const BACKDROP_BASE = 'https://image.tmdb.org/t/p/original';
 const POSTER_BASE = 'https://image.tmdb.org/t/p/w185';
