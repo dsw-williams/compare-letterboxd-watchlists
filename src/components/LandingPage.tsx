@@ -213,7 +213,7 @@ export default function LandingPage() {
                 </span>
               </div>
 
-              <h1 className="text-text-primary text-center font-black leading-[1.1] mb-8 text-[2.6rem] sm:text-5xl">
+              <h1 className="text-text-primary text-center font-black leading-[1.1] mb-8 text-[2.6rem] sm:text-5xl" style={{ textShadow: '0 4px 20px rgba(0,0,0,0.9)' }}>
                 Compare Letterboxd watchlists. Pick what to watch.
               </h1>
 
