@@ -39,6 +39,7 @@ const config: Config = {
       },
       fontFamily: {
         sans: ['Graphik', 'Arial Narrow', 'system-ui', 'sans-serif'],
+        display: ['var(--font-display)', 'Georgia', 'serif'],
       },
     },
   },

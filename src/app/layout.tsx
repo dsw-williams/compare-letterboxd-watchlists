@@ -1,8 +1,7 @@
 import type { Metadata, Viewport } from 'next';
-import { Inter, Outfit } from 'next/font/google';
+import { Inter, Playfair_Display } from 'next/font/google';
 import { headers } from 'next/headers';
 import './globals.css';
-import Nav from '@/components/Nav';
 
 const inter = Inter({
   subsets: ['latin'],
@@ -11,9 +10,9 @@ const inter = Inter({
   display: 'swap',
 });
 
-const outfit = Outfit({
+const playfair = Playfair_Display({
   subsets: ['latin'],
-  weight: ['800', '900'],
+  weight: ['700', '800', '900'],
   variable: '--font-display',
   display: 'swap',
 });
@@ -48,11 +47,11 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${inter.variable} ${outfit.variable}`}>
+    <html lang="en" className={`${inter.variable} ${playfair.variable}`}>
       <body style={{ backgroundColor: '#141414', minHeight: '100vh' }}>
-        <Nav />
         <main>{children}</main>
       </body>
     </html>
   );
 }
+

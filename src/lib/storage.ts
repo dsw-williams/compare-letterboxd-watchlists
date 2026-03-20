@@ -101,9 +101,13 @@ export async function deleteList(id: string): Promise<void> {
 export async function getSettings(): Promise<Settings> {
   try {
     const content = await fs.readFile(SETTINGS_FILE, 'utf-8');
-    return JSON.parse(content);
+    const stored: Settings = JSON.parse(content);
+    return {
+      ...stored,
+      tmdb_api_key: process.env.TMDB_API_KEY || stored.tmdb_api_key,
+    };
   } catch {
-    return { tmdb_api_key: null };
+    return { tmdb_api_key: process.env.TMDB_API_KEY || null };
   }
 }
 

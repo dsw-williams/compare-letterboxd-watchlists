@@ -46,6 +46,16 @@ html, body {
   to   { transform: rotate(360deg); }
 }
 
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeOut {
+  from { opacity: 1; }
+  to   { opacity: 0; }
+}
+
 /* Remove tap highlight on all interactive elements */
 button, a, [role="button"] {
   -webkit-tap-highlight-color: transparent;

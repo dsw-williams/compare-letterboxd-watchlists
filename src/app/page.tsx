@@ -6,6 +6,8 @@ import FriendSelector from '@/components/FriendSelector';
 import MovieGrid from '@/components/MovieGrid';
 import Card from '@/components/ui/Card';
 import PillButton from '@/components/ui/PillButton';
+import LandingPage from '@/components/LandingPage';
+import Nav from '@/components/Nav';
 
 interface OverlapEntry {
   movie: Movie;
@@ -30,6 +32,7 @@ export default function HomePage() {
   const [selectedLists, setSelectedLists] = useState<string[]>([]);
   const [overlap, setOverlap] = useState<OverlapEntry[]>([]);
   const [loading, setLoading] = useState(false);
+  const [initialLoading, setInitialLoading] = useState(true);
   const [activeGenres, setActiveGenres] = useState<string[]>([]);
   const [watchedFilter, setWatchedFilter] = useState<'show' | 'fade' | 'hide'>('show');
   const [sortOrder, setSortOrder] = useState<'random' | 'rating_desc' | 'rating_asc' | 'runtime_desc' | 'runtime_asc' | 'title'>('random');
@@ -39,6 +42,11 @@ export default function HomePage() {
 
   // Load friends and lists on mount
   useEffect(() => {
+    let friendsDone = false;
+    let listsDone = false;
+    function checkDone() {
+      if (friendsDone && listsDone) setInitialLoading(false);
+    }
     fetch('/api/friends')
       .then((r) => r.json())
       .then((data: Friend[]) => {
@@ -46,10 +54,12 @@ export default function HomePage() {
         if (data.length > 0 && data.length <= 4) {
           setSelected(data.map((f) => f.username));
         }
-      });
+      })
+      .finally(() => { friendsDone = true; checkDone(); });
     fetch('/api/lists')
       .then((r) => r.json())
-      .then((data: LetterboxdList[]) => setLists(data));
+      .then((data: LetterboxdList[]) => setLists(data))
+      .finally(() => { listsDone = true; checkDone(); });
   }, []);
 
   // Randomise order once per data load
@@ -195,7 +205,14 @@ export default function HomePage() {
   const hour = new Date().getHours();
   const timeOfDay = hour < 12 ? 'this morning' : hour < 17 ? 'this afternoon' : hour < 20 ? 'this evening' : 'tonight';
 
+  // Show landing page when there is no data yet (after all hooks)
+  if (!initialLoading && friends.length === 0 && lists.length === 0) {
+    return <LandingPage />;
+  }
+
   return (
+    <>
+    <Nav />
     <div className="max-w-[1400px] mx-auto px-6 py-8">
       {/* Page header */}
       <div className="mb-7">
@@ -384,5 +401,6 @@ export default function HomePage() {
         </div>
       )}
     </div>
+    </>
   );
 }

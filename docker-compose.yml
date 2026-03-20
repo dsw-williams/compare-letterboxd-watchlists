@@ -1,0 +1,10 @@
+services:
+  watchlist:
+    image: dswwilliams/compare-letterboxd-watchlists:latest
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./data:/app/data
+    env_file:
+      - .env
+    restart: unless-stopped

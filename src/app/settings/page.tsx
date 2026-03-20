@@ -1,6 +1,5 @@
 'use client';
 import { useState, useEffect } from 'react';
-import { cn } from '@/lib/utils';
 import { Friend, LetterboxdList } from '@/lib/types';
 import ImportProgress from '@/components/ImportProgress';
 import EntityCard from '@/components/EntityCard';
@@ -8,6 +7,8 @@ import { useImportStream } from '@/hooks/useImportStream';
 import Card from '@/components/ui/Card';
 import PrimaryButton from '@/components/ui/PrimaryButton';
 import InputField from '@/components/ui/InputField';
+import Nav from '@/components/Nav';
+
 
 function timeAgo(isoString: string | null): string {
   if (!isoString) return 'never synced';
@@ -26,9 +27,6 @@ export default function SettingsPage() {
   const [friends, setFriends] = useState<Friend[]>([]);
   const [syncingId, setSyncingId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
-  const [tmdbKey, setTmdbKey] = useState('');
-  const [tmdbSaved, setTmdbSaved] = useState(false);
-  const [tmdbSaving, setTmdbSaving] = useState(false);
 
   // Lists state
   const [lists, setLists] = useState<LetterboxdList[]>([]);
@@ -67,9 +65,6 @@ export default function SettingsPage() {
   useEffect(() => {
     fetchFriends();
     fetchLists();
-    fetch('/api/settings')
-      .then((r) => r.json())
-      .then((s) => setTmdbKey(s.tmdb_api_key ?? ''));
   }, []);
 
   async function handleRenameFriend(username: string, customName: string) {
@@ -111,20 +106,6 @@ export default function SettingsPage() {
     } finally {
       setDeletingListId(null);
     }
-  }
-
-  async function handleSaveTmdb(e: React.FormEvent) {
-    e.preventDefault();
-    setTmdbSaving(true);
-    setTmdbSaved(false);
-    await fetch('/api/settings', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ tmdb_api_key: tmdbKey.trim() || null }),
-    });
-    setTmdbSaving(false);
-    setTmdbSaved(true);
-    setTimeout(() => setTmdbSaved(false), 3000);
   }
 
   async function handleSync(username: string) {
@@ -171,6 +152,8 @@ export default function SettingsPage() {
   }
 
   return (
+    <>
+    <Nav />
     <div className="max-w-[600px] mx-auto px-4 py-10">
       <h1 className="text-center text-26 font-bold text-text-primary mb-9">
         Settings
@@ -331,32 +314,7 @@ export default function SettingsPage() {
         ))}
       </div>
 
-      {/* TMDB API key panel */}
-      <Card className="p-6">
-        <h2 className="text-17 font-bold text-text-primary mb-[6px]">
-          TMDB API Key
-        </h2>
-        <p className="text-sm text-text-secondary mb-5 leading-relaxed">
-          Optional. Enables movie posters and ratings. Get a free key at{' '}
-          <span className="text-accent-green">themoviedb.org/settings/api</span>
-        </p>
-        <form onSubmit={handleSaveTmdb} className="flex flex-col gap-2">
-          <InputField
-            type="password"
-            value={tmdbKey}
-            onChange={(e) => { setTmdbKey(e.target.value); setTmdbSaved(false); }}
-            placeholder="Paste your API key here"
-            className="w-full h-11 px-[14px]"
-          />
-          <PrimaryButton
-            type="submit"
-            disabled={tmdbSaving}
-            className={cn('text-sm', tmdbSaved && 'bg-accent-green-disabled')}
-          >
-            {tmdbSaved ? '✓ Saved' : tmdbSaving ? 'Saving...' : 'Save'}
-          </PrimaryButton>
-        </form>
-      </Card>
     </div>
+    </>
   );
 }

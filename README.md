@@ -8,7 +8,7 @@ A personal, local-only web app to compare Letterboxd watchlists across friends a
 - Fade or hide films you've already watched
 - Highlights each friend's top-4 favourite films with a gold border
 - Set custom display names for friends
-- Movie posters, ratings, runtime, and director via TMDB (optional)
+- Movie posters, ratings, runtime, and director via TMDB (requires a free API key — see setup)
 
 ---
 
@@ -41,7 +41,19 @@ pip3 install -r requirements.txt
 > PYTHON_EXECUTABLE=python3.14
 > ```
 
-### 3. Start the app
+### 3. Add your TMDB API key
+
+Copy the example env file and add your key:
+
+```bash
+cp .env.example .env.local
+```
+
+Then open `.env.local` and replace `your_tmdb_api_key_here` with your actual key. Get a free key at [themoviedb.org/settings/api](https://www.themoviedb.org/settings/api).
+
+> The app runs without a TMDB key but movie posters, ratings, runtime, and director info will be missing.
+
+### 4. Start the app
 
 ```bash
 npm run dev
@@ -55,10 +67,20 @@ Open [http://localhost:3000](http://localhost:3000)
 
 ### Run with Docker
 
+First, set up your env file:
+
+```bash
+cp .env.example .env
+# Edit .env and add your TMDB API key
+```
+
+Then run:
+
 ```bash
 docker run -d \
   -p 3000:3000 \
   -v $(pwd)/data:/app/data \
+  --env-file .env \
   --name watchlist \
   dswwilliams/compare-letterboxd-watchlists
 ```
@@ -78,15 +100,17 @@ docker run -d \
 
 ### Docker Compose
 
-```yaml
-services:
-  watchlist:
-    image: dswwilliams/compare-letterboxd-watchlists
-    ports:
-      - "3000:3000"
-    volumes:
-      - ./data:/app/data
-    restart: unless-stopped
+A `docker-compose.yml` is included. Set up your env file first:
+
+```bash
+cp .env.example .env
+# Edit .env and add your TMDB API key
+```
+
+Then:
+
+```bash
+docker compose up -d
 ```
 
 > Data is persisted in the mounted `data/` volume. All friend data, watched films, and settings are stored there.
@@ -95,11 +119,10 @@ services:
 
 ## Usage
 
-1. Go to **Settings** (gear icon, top right)
-2. Add friends by their Letterboxd username — optionally set a custom display name for each
-3. Optionally import Letterboxd lists by URL (e.g. `letterboxd.com/username/list/list-name/`)
-4. Optionally add a free [TMDB API key](https://www.themoviedb.org/settings/api) to enable movie posters, ratings, runtime, and director info
-5. Head back to the home page, select friends, and browse your shared watchlists
+1. Open the app and follow the onboarding to add yourself and friends by Letterboxd username
+2. Optionally select curated Letterboxd lists to import during onboarding
+3. On the home page, select friends to compare watchlists and browse shared films
+4. Go to **Settings** (gear icon) to add more friends, import lists, rename or sync existing ones
 
 ---
 
@@ -108,6 +131,7 @@ services:
 - All data is stored locally in a `data/` folder — nothing ever leaves your machine
 - The **sync button** (↻) on the Settings page quickly picks up recent watched activity, refreshes the watchlist, and updates favourite films
 - Re-sync a friend after adding a TMDB key to populate their posters, ratings, and runtime data
+- The TMDB API key is set via environment variable only (see setup above) — it cannot be changed in the UI
 
 ---
 
