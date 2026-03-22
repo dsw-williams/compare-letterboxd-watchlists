@@ -47,9 +47,6 @@ const [activeGenres, setActiveGenres] = useState<string[]>([]);
       .then((r) => r.json())
       .then((data: Friend[]) => {
         setFriends(data);
-        if (data.length > 0 && data.length <= 4) {
-          setSelected(data.map((f) => f.username));
-        }
       });
     fetch('/api/lists')
       .then((r) => r.json())
