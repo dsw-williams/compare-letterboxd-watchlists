@@ -2,6 +2,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Check, ChevronLeft } from 'lucide-react';
 import { DEFAULT_LISTS } from '@/config/defaultLists';
+import landingMovies from '@/data/landing-movies.json';
 
 interface PosterMovie {
   id: number;
@@ -85,22 +86,24 @@ export default function LandingPage() {
   const [friendsList, setFriendsList] = useState<string[]>([]);
   const [selectedDefaults, setSelectedDefaults] = useState<string[]>([]);
   const [backdrop, setBackdrop] = useState<BackdropData | null>(null);
+
+  useEffect(() => {
+    const shuffled = [...landingMovies].sort(() => Math.random() - 0.5);
+    const [hero, ...rest] = shuffled;
+    setBackdrop({
+      title: hero.title,
+      year: hero.year,
+      director: hero.director,
+      backdrop_url: hero.backdrop_url,
+      poster_movies: rest.map((m, i) => ({ id: i, poster_url: m.poster_url })),
+    });
+  }, []);
   const [importStatus, setImportStatus] = useState('');
   const [importProgress, setImportProgress] = useState({ done: 0, total: 0 });
   const [importDone, setImportDone] = useState(false);
   const [heroExiting, setHeroExiting] = useState(false);
   const [friendsNextError, setFriendsNextError] = useState(false);
   const importingRef = useRef(false);
-  const backdropFetched = useRef(false);
-
-  useEffect(() => {
-    if (backdropFetched.current) return;
-    backdropFetched.current = true;
-    fetch('/api/tmdb/backdrop')
-      .then((r) => r.json())
-      .then(setBackdrop)
-      .catch(() => {});
-  }, []);
 
   useEffect(() => {
     if (step !== 'importing' || importingRef.current) return;
