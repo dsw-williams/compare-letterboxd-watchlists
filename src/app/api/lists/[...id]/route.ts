@@ -3,7 +3,7 @@ import { deleteList, upsertList, getLists, getSettings } from '@/lib/storage';
 
 export const runtime = 'nodejs';
 import { fetchList } from '@/lib/letterboxd';
-import { maybeTriggerListEnrichment } from '@/lib/streaming';
+import { createStreamingResponse, maybeTriggerListEnrichment } from '@/lib/streaming';
 
 async function resolveId(params: Promise<{ id: string[] }>) {
   const { id } = await params;
@@ -20,24 +20,26 @@ export async function POST(
     return NextResponse.json({ error: 'List not found' }, { status: 404 });
   }
 
-  const { owner, slug } = existing;
-  const { title, movies } = await fetchList(owner, slug);
+  return createStreamingResponse(async (send) => {
+    const displayName = existing.custom_name ?? existing.name;
+    send({ step: 'scraping', message: `Re-fetching "${displayName}"...` });
+    const { title, movies } = await fetchList(existing.owner, existing.slug);
 
-  const settings = await getSettings();
+    const settings = await getSettings();
 
-  await upsertList({
-    ...existing,
-    name: title,
-    movies,
-    last_synced: new Date().toISOString(),
-    // tmdb_enriched: true means "no enrichment pending".
-    // When there is no API key, enrichment is not possible, so mark it complete.
-    tmdb_enriched: !settings.tmdb_api_key,
+    await upsertList({
+      ...existing,
+      name: title,
+      movies,
+      last_synced: new Date().toISOString(),
+      // enrichment_pending: true means TMDB enrichment is needed.
+      // When there is no API key, enrichment is not possible, so mark it not pending.
+      enrichment_pending: !!settings.tmdb_api_key,
+    });
+
+    send({ step: 'done' });
+    maybeTriggerListEnrichment(listId, settings);
   });
-
-  maybeTriggerListEnrichment(listId, settings);
-
-  return NextResponse.json({ ok: true });
 }
 
 export async function PATCH(

@@ -45,9 +45,9 @@ export async function POST(req: NextRequest) {
       watched,
       favourites,
       last_synced: new Date().toISOString(),
-      // tmdb_enriched: true means "no enrichment pending".
-      // When there is no API key, enrichment is not possible, so mark it complete.
-      tmdb_enriched: !settings.tmdb_api_key,
+      // enrichment_pending: true means TMDB enrichment is needed.
+      // When there is no API key, enrichment is not possible, so mark it not pending.
+      enrichment_pending: !!settings.tmdb_api_key,
     };
 
     await upsertFriend(friend);

@@ -90,8 +90,26 @@ export default function SettingsPage() {
   async function handleSyncList(id: string) {
     setSyncingListId(id);
     try {
-      await fetch(`/api/lists/${id}`, { method: 'POST' });
-      await fetchLists();
+      const res = await fetch(`/api/lists/${id}`, { method: 'POST' });
+      const reader = res.body?.getReader();
+      const decoder = new TextDecoder('utf-8', { fatal: false });
+      if (reader) {
+        let buffer = '';
+        let done = false;
+        while (!done) {
+          const { value, done: streamDone } = await reader.read();
+          done = streamDone;
+          if (value) buffer += decoder.decode(value, { stream: true });
+          const lines = buffer.split('\n');
+          buffer = lines.pop() ?? '';
+          for (const line of lines.filter(Boolean)) {
+            try {
+              const data = JSON.parse(line);
+              if (data.step === 'done') await fetchLists();
+            } catch {}
+          }
+        }
+      }
     } finally {
       setSyncingListId(null);
     }
@@ -223,7 +241,7 @@ export default function SettingsPage() {
               { label: `${(friend.favourites ?? []).length} favourites` },
             ]}
             lastSynced={friend.last_synced}
-            tmdbEnriched={friend.tmdb_enriched}
+            tmdbEnriched={!friend.enrichment_pending}
             timeAgo={timeAgo}
             isRenaming={renamingFriendId === friend.username}
             renameValue={renameFriendValue}
@@ -293,7 +311,7 @@ export default function SettingsPage() {
               { label: `by ${list.owner}`, dimmed: true },
             ]}
             lastSynced={list.last_synced}
-            tmdbEnriched={list.tmdb_enriched}
+            tmdbEnriched={!list.enrichment_pending}
             timeAgo={timeAgo}
             isRenaming={renamingListId === list.id}
             renameValue={renameValue}

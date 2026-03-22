@@ -46,6 +46,8 @@ def cmd_list(username, slug):
 
 
 def cmd_favourites(username):
+    # letterboxdpy's get_favorites() looks for ul.poster-list which Letterboxd
+    # has changed to ul.grid.-p150 — so we scrape the section directly instead.
     from letterboxdpy.constants.project import DOMAIN
     from letterboxdpy.core.scraper import parse_url
 
@@ -59,6 +61,9 @@ def cmd_favourites(username):
     for div in section.find_all("div", attrs={"data-item-slug": True}):
         slug = div.get("data-item-slug", "")
         name = div.get("data-item-name", "")
+        # data-item-name includes year: "Scream (1996)" → strip it
+        if name and name.endswith(")") and " (" in name:
+            name = name.rsplit(" (", 1)[0]
         full = div.get("data-item-full-display-name", "")
         year = ""
         if full and full.endswith(")") and "(" in full:
@@ -69,6 +74,37 @@ def cmd_favourites(username):
         if slug:
             movies.append(_film_dict(slug, name, year))
     print(json.dumps(movies))
+
+
+def cmd_watched_since(username, known_slugs_json):
+    """Fetch watched films page by page, stopping when a known slug is encountered."""
+    from letterboxdpy.constants.project import DOMAIN
+    from letterboxdpy.core.scraper import parse_url
+    from letterboxdpy.pages.user_films import extract_movies_from_user_watched
+    from letterboxdpy.utils.utils_url import get_page_url
+
+    known = set(json.loads(known_slugs_json))
+    base_url = f"{DOMAIN}/{username}/films"
+    page = 1
+    new_movies = []
+
+    while True:
+        dom = parse_url(get_page_url(base_url, page))
+        page_movies = extract_movies_from_user_watched(dom)
+        if not page_movies:
+            break
+        found_known = False
+        for slug, data in page_movies.items():
+            if slug in known:
+                found_known = True
+                break
+            if slug:
+                new_movies.append(_film_dict(slug, data['name'], data.get('year')))
+        if found_known:
+            break
+        page += 1
+
+    print(json.dumps(new_movies))
 
 
 def cmd_watched(username):
@@ -115,6 +151,18 @@ def main():
         slug = sys.argv[3]
         try:
             cmd_list(username, slug)
+        except Exception as e:
+            sys.stderr.write(str(e) + '\n')
+            sys.exit(1)
+        return
+
+    if command == 'watched_since':
+        if len(sys.argv) < 4:
+            print(json.dumps({'error': 'Usage: letterboxd_scraper.py watched_since <username> <known_slugs_json>'}))
+            sys.exit(1)
+        known_slugs_json = sys.argv[3]
+        try:
+            cmd_watched_since(username, known_slugs_json)
         except Exception as e:
             sys.stderr.write(str(e) + '\n')
             sys.exit(1)
