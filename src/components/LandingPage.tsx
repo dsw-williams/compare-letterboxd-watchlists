@@ -2,7 +2,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Check, ChevronLeft } from 'lucide-react';
 import { DEFAULT_LISTS } from '@/config/defaultLists';
-import landingMovies from '@/data/landing-movies.json';
+import landingMovies from '@/config/landing-movies.json';
 
 interface PosterMovie {
   id: number;

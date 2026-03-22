@@ -4,7 +4,7 @@ import path from 'path';
 
 export const runtime = 'nodejs';
 
-const FILE_PATH = path.join(process.cwd(), 'src/data/landing-movies.json');
+const FILE_PATH = path.join(process.cwd(), 'src/config/landing-movies.json');
 
 function devOnly() {
   if (process.env.NODE_ENV !== 'development') {
