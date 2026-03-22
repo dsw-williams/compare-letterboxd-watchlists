@@ -59,11 +59,6 @@ export default function SetupPageClient({ env }: Props) {
         </span>
       </div>
 
-      {/* Sixth Sense headline */}
-      <h1 className="text-text-primary font-black text-center text-[2.2rem] sm:text-5xl leading-[1.1] mb-10">
-        I see dead pages&hellip;
-      </h1>
-      
       {/* Instructions card */}
       <div className="w-full max-w-lg bg-bg-card border border-border-subtle rounded-2xl p-8">
         <p className="text-xs font-bold text-accent-green uppercase tracking-[0.12em] mb-3">
