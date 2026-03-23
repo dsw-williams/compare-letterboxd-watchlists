@@ -169,15 +169,6 @@ export default function LandingPage() {
               className="w-full max-w-md"
               style={{ animation: heroExiting ? 'fadeOut 0.5s ease-in-out both' : 'fadeUp 0.3s ease-out both' }}
             >
-              {/* App logo + wordmark */}
-              <div className="flex items-center justify-center gap-2.5 mb-6">
-                <div className="w-8 h-8 bg-accent-green rounded-[6px] flex items-center justify-center shrink-0">
-                  <span className="text-lg leading-none">🎬</span>
-                </div>
-                <span className="text-text-primary font-black text-lg tracking-[0.06em] uppercase">
-                  Watchlist
-                </span>
-              </div>
 
               <h1 className="text-text-primary text-center font-black leading-[1.1] mb-8 text-[2.6rem] sm:text-5xl" style={{ textShadow: '0 4px 20px rgba(0,0,0,0.9)' }}>
                 Compare Letterboxd watchlists. Pick what to watch.
