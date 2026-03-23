@@ -42,7 +42,7 @@ export default function MovieCard({ movie, friends, totalSelected, allFriends, f
       target="_blank"
       rel="noopener noreferrer"
       className={clsx(
-        'block cursor-pointer transition-[opacity,transform] duration-150 hover:scale-[1.03]',
+        'block cursor-pointer transition-[opacity,transform] duration-150 [@media(hover:hover)]:hover:scale-[1.03]',
         faded && 'opacity-40'
       )}
     >
