@@ -8,7 +8,7 @@ export default function PageLoadingSkeleton({ variant }: Props) {
 
 function HomeSkeleton() {
   return (
-    <div className="max-w-[1400px] mx-auto px-6 py-8">
+    <div className="max-w-[1150px] mx-auto px-6 py-8">
       {/* Page header */}
       <div className="mb-7">
         <div className="h-8 w-72 bg-bg-card rounded-lg animate-pulse mb-2" />

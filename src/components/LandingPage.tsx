@@ -384,7 +384,7 @@ export default function LandingPage() {
         {step === 'hero' && posterMovies.length > 0 && (
           <div className="relative overflow-hidden" style={{ height: '42vh', animation: heroExiting ? 'fadeOut 0.5s ease-in-out both' : undefined }}>
             {/* Poster grid — same column sizing as MovieGrid, constrained to page width */}
-            <div className="max-w-[1400px] mx-auto px-6">
+            <div className="max-w-[1150px] mx-auto px-6">
             <div
               className="grid gap-3 pointer-events-none"
               style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))' }}

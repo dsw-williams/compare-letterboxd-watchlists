@@ -182,7 +182,7 @@ export default function HomePageClient({ initialFriends, initialLists }: HomePag
   const timeOfDay = hour < 12 ? 'this morning' : hour < 17 ? 'this afternoon' : hour < 20 ? 'this evening' : 'tonight';
 
   return (
-    <div className="max-w-[1400px] mx-auto px-6 py-8">
+    <div className="max-w-[1150px] mx-auto px-6 py-8">
       {/* Page header */}
       <div className="mb-7">
         <h1 className="text-[30px] font-bold text-text-primary leading-[1.2]">
