@@ -44,7 +44,7 @@ export default function FriendSelector({ friends, selected, onToggle }: FriendSe
               <div className="relative w-16 h-16">
                 <div
                   className={clsx(
-                    'w-16 h-16 rounded-full p-[2px] transition-colors duration-150 border-2',
+                    'relative w-16 h-16 rounded-full p-[2px] transition-colors duration-150 border-2',
                     isSelected ? 'border-accent-green' : 'border-transparent'
                   )}
                 >
