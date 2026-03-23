@@ -1,4 +1,5 @@
-'use client';
+import Image from 'next/image';
+import Link from 'next/link';
 import clsx from 'clsx';
 import { Check } from 'lucide-react';
 import { Friend } from '@/lib/types';
@@ -16,9 +17,9 @@ export default function FriendSelector({ friends, selected, onToggle, onSelectAl
     return (
       <Card className="p-5 text-center text-text-tertiary text-sm">
         No friends added yet.{' '}
-        <a href="/settings" className="text-accent-green no-underline">
+        <Link href="/settings" className="text-accent-green no-underline">
           Add some in Settings →
-        </a>
+        </Link>
       </Card>
     );
   }
@@ -55,10 +56,12 @@ export default function FriendSelector({ friends, selected, onToggle, onSelectAl
                   )}
                 >
                   {friend.avatar_url ? (
-                    <img
+                    <Image
                       src={friend.avatar_url}
                       alt={friend.username}
-                      className="w-full h-full rounded-full object-cover block"
+                      fill
+                      sizes="64px"
+                      className="rounded-full object-cover"
                     />
                   ) : (
                     <div className="w-full h-full rounded-full bg-border-subtle flex items-center justify-center text-text-secondary font-bold text-xl">

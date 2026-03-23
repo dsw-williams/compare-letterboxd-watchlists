@@ -1,6 +1,8 @@
 'use client';
 import { useState } from 'react';
+import Image from 'next/image';
 import { Friend, LetterboxdList } from '@/lib/types';
+import { readJsonStream } from '@/lib/stream-reader';
 import ImportProgress from '@/components/ImportProgress';
 import EntityCard from '@/components/EntityCard';
 import { useImportStream } from '@/hooks/useImportStream';
@@ -89,23 +91,9 @@ export default function SettingsPageClient({ initialFriends, initialLists }: Set
     setSyncingListId(id);
     try {
       const res = await fetch(`/api/lists/${id}`, { method: 'POST' });
-      const reader = res.body?.getReader();
-      const decoder = new TextDecoder('utf-8', { fatal: false });
-      if (reader) {
-        let buffer = '';
-        let done = false;
-        while (!done) {
-          const { value, done: streamDone } = await reader.read();
-          done = streamDone;
-          if (value) buffer += decoder.decode(value, { stream: true });
-          const lines = buffer.split('\n');
-          buffer = lines.pop() ?? '';
-          for (const line of lines.filter(Boolean)) {
-            try {
-              const data = JSON.parse(line);
-              if (data.step === 'done') await fetchLists();
-            } catch {}
-          }
+      if (res.body) {
+        for await (const data of readJsonStream(res.body)) {
+          if (data.step === 'done') await fetchLists();
         }
       }
     } finally {
@@ -129,24 +117,10 @@ export default function SettingsPageClient({ initialFriends, initialLists }: Set
     setSyncProgress((p) => ({ ...p, [username]: 0 }));
     try {
       const res = await fetch(`/api/friends/${username}/sync`, { method: 'POST' });
-      const reader = res.body?.getReader();
-      const decoder = new TextDecoder('utf-8', { fatal: false });
-      if (!reader) throw new Error('No stream');
-      let buffer = '';
-      let done = false;
-      while (!done) {
-        const { value, done: streamDone } = await reader.read();
-        done = streamDone;
-        if (value) buffer += decoder.decode(value, { stream: true });
-        const lines = buffer.split('\n');
-        buffer = lines.pop() ?? '';
-        for (const line of lines.filter(Boolean)) {
-          try {
-            const data = JSON.parse(line);
-            if (data.pct !== undefined) setSyncProgress((p) => ({ ...p, [username]: data.pct }));
-            if (data.step === 'done') await fetchFriends();
-          } catch {}
-        }
+      if (!res.body) throw new Error('No stream');
+      for await (const data of readJsonStream(res.body)) {
+        if (data.pct !== undefined) setSyncProgress((p) => ({ ...p, [username]: data.pct }));
+        if (data.step === 'done') await fetchFriends();
       }
     } finally {
       setTimeout(() => {
@@ -218,7 +192,7 @@ export default function SettingsPageClient({ initialFriends, initialLists }: Set
           <EntityCard
             key={friend.username}
             avatarNode={friend.avatar_url ? (
-              <img
+              <Image
                 src={friend.avatar_url}
                 alt={friend.username}
                 width={48}

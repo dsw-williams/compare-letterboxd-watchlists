@@ -1,5 +1,6 @@
 'use client';
 import { useState } from 'react';
+import { readJsonStream } from '@/lib/stream-reader';
 
 type ProgressStep = { step: string; message: string };
 
@@ -31,38 +32,21 @@ export function useImportStream({ endpoint, buildBody, onSuccess }: UseImportStr
         body: JSON.stringify(buildBody(value.trim())),
       });
 
-      const reader = res.body?.getReader();
-      const decoder = new TextDecoder('utf-8', { fatal: false });
+      if (!res.body) throw new Error('No response stream');
 
-      if (!reader) throw new Error('No response stream');
-
-      let buffer = '';
-      let done = false;
-      while (!done) {
-        const { value: chunk, done: streamDone } = await reader.read();
-        done = streamDone;
-        if (chunk) buffer += decoder.decode(chunk, { stream: true });
-
-        // Process all complete newline-delimited JSON lines
-        const lines = buffer.split('\n');
-        buffer = lines.pop() ?? ''; // keep any incomplete trailing fragment
-        for (const line of lines.filter(Boolean)) {
-          try {
-            const data = JSON.parse(line);
-            if (data.step === 'error') {
-              setError(data.message);
-            } else if (data.step === 'done') {
-              setProgressDone(true);
-              setTimeout(() => setProgress([]), 1800);
-              setValue('');
-              await onSuccess();
-            } else {
-              setProgress((prev) => {
-                const filtered = prev.filter((p) => p.step !== data.step);
-                return [...filtered, { step: data.step, message: data.message }];
-              });
-            }
-          } catch {}
+      for await (const data of readJsonStream(res.body)) {
+        if (data.step === 'error') {
+          setError(data.message);
+        } else if (data.step === 'done') {
+          setProgressDone(true);
+          setTimeout(() => setProgress([]), 1800);
+          setValue('');
+          await onSuccess();
+        } else {
+          setProgress((prev) => {
+            const filtered = prev.filter((p) => p.step !== data.step);
+            return [...filtered, { step: data.step, message: data.message }];
+          });
         }
       }
     } catch (err) {

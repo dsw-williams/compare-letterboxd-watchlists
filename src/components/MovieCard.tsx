@@ -1,4 +1,6 @@
 'use client';
+import { useState } from 'react';
+import Image from 'next/image';
 import clsx from 'clsx';
 import { Movie, Friend } from '@/lib/types';
 
@@ -25,6 +27,7 @@ function favouriteLabel(usernames: string[]): string {
 }
 
 export default function MovieCard({ movie, friends, totalSelected, allFriends, faded, favouritedBy = [] }: MovieCardProps) {
+  const [posterLoaded, setPosterLoaded] = useState(false);
   const friendData = allFriends.filter((f) => friends.includes(f.username));
   const isFavourite = favouritedBy.length > 0;
   const favouriteDisplayNames = favouritedBy.map(
@@ -51,11 +54,18 @@ export default function MovieCard({ movie, friends, totalSelected, allFriends, f
         )}
         style={isFavourite ? { boxShadow: '0 0 18px rgba(245,158,11,0.35)' } : undefined}
       >
+        {/* Shimmer — removed from DOM once poster loads */}
+        {!posterLoaded && <div className="absolute inset-0 bg-bg-card-hover animate-pulse" />}
+
         {movie.poster_url ? (
-          <img
+          <Image
             src={movie.poster_url}
             alt={movie.title}
-            className="w-full h-full object-cover"
+            fill
+            unoptimized
+            sizes="(max-width: 640px) 25vw, (max-width: 1400px) 15vw, 200px"
+            className="object-cover"
+            onLoad={() => setPosterLoaded(true)}
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center p-3 text-center text-text-tertiary text-13">
@@ -75,12 +85,13 @@ export default function MovieCard({ movie, friends, totalSelected, allFriends, f
           {friendData.slice(0, 3).map((f, i) => (
             <div key={f.username} style={{ marginLeft: i > 0 ? '-8px' : '0', zIndex: i }}>
               {f.avatar_url ? (
-                <img
+                <Image
                   src={f.avatar_url}
                   alt={f.username}
                   title={f.username}
                   width={22}
                   height={22}
+                  unoptimized
                   className="rounded-full border-[1.5px] border-bg-primary object-cover block"
                 />
               ) : (

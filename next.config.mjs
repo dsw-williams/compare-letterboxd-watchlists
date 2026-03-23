@@ -2,7 +2,11 @@
 const nextConfig = {
   output: 'standalone',
   images: {
-    domains: ['image.tmdb.org', 'a.ltrbxd.com', 'secure.gravatar.com'],
+    remotePatterns: [
+      { protocol: 'https', hostname: 'image.tmdb.org' },
+      { protocol: 'https', hostname: 'a.ltrbxd.com' },
+      { protocol: 'https', hostname: 'secure.gravatar.com' },
+    ],
   },
 };
 

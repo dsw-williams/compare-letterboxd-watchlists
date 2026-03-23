@@ -1,6 +1,9 @@
 'use client';
 import { useState, useEffect, useRef } from 'react';
+import Image from 'next/image';
+import { useRouter } from 'next/navigation';
 import { Check, ChevronLeft } from 'lucide-react';
+import { readJsonStream } from '@/lib/stream-reader';
 import { DEFAULT_LISTS } from '@/config/defaultLists';
 import landingMovies from '@/config/landing-movies.json';
 
@@ -29,23 +32,10 @@ async function streamImport(
       body: JSON.stringify(body),
     });
     if (!res.ok || !res.body) return;
-    const reader = res.body.getReader();
-    const decoder = new TextDecoder('utf-8', { fatal: false });
-    let buffer = '';
-    while (true) {
-      const { value, done } = await reader.read();
-      if (done) break;
-      buffer += decoder.decode(value, { stream: true });
-      const lines = buffer.split('\n');
-      buffer = lines.pop() ?? '';
-      for (const line of lines.filter(Boolean)) {
-        try {
-          const data = JSON.parse(line);
-          if (data.step === 'error') return;
-          if (data.step !== 'done' && data.message) onProgress(data.message);
-          if (data.step === 'done') return;
-        } catch { /* skip malformed lines */ }
-      }
+    for await (const data of readJsonStream(res.body)) {
+      if (data.step === 'error') return;
+      if (data.step !== 'done' && data.message) onProgress(data.message);
+      if (data.step === 'done') return;
     }
   } catch { /* silently continue */ }
 }
@@ -80,6 +70,7 @@ function CollapsedCard({
 }
 
 export default function LandingPage() {
+  const router = useRouter();
   const [step, setStep] = useState<Step>('hero');
   const [yourUsername, setYourUsername] = useState('');
   const [friendInput, setFriendInput] = useState('');
@@ -132,7 +123,7 @@ export default function LandingPage() {
     }
 
     setImportDone(true);
-    setTimeout(() => { window.location.href = '/'; }, 2000);
+    setTimeout(() => { router.push('/'); }, 2000);
   }
 
   function startOnboarding() {
@@ -176,11 +167,13 @@ export default function LandingPage() {
       {backdrop?.backdrop_url && (
         <div className="absolute inset-0 bg-bg-primary">
           <div className="max-w-[1400px] mx-auto h-full relative overflow-hidden">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
+            <Image
               src={backdrop.backdrop_url}
               alt=""
-              className="w-full h-full object-cover object-top"
+              fill
+              sizes="100vw"
+              className="object-cover object-top"
+              priority={false}
             />
             {/* Bottom-to-top fade — eased */}
             <div className="absolute inset-0" style={{ background: 'linear-gradient(to top, #141414 0%, #141414e6 15%, #141414b3 35%, #14141466 55%, #14141426 75%, transparent 100%)' }} />
@@ -441,13 +434,13 @@ export default function LandingPage() {
               style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))' }}
             >
               {posterMovies.map((m) => (
-                <div key={m.id} className="aspect-[2/3] rounded-lg overflow-hidden bg-bg-card">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
+                <div key={m.id} className="aspect-[2/3] rounded-lg overflow-hidden bg-bg-card relative">
+                  <Image
                     src={m.poster_url}
                     alt=""
-                    className="w-full h-full object-cover"
-                    loading="lazy"
+                    fill
+                    sizes="(max-width: 640px) 25vw, 160px"
+                    className="object-cover"
                   />
                 </div>
               ))}

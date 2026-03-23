@@ -1,5 +1,11 @@
+import { Metadata } from 'next';
 import { existsSync } from 'fs';
 import SetupPageClient from './SetupPageClient';
+
+export const metadata: Metadata = {
+  title: 'Setup — Watchlist',
+  robots: { index: false, follow: false },
+};
 
 export type EnvType = 'docker' | 'local-dev' | 'production';
 

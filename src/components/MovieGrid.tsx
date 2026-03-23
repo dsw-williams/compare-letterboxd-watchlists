@@ -1,4 +1,3 @@
-'use client';
 import MovieCard from './MovieCard';
 import { Movie, Friend } from '@/lib/types';
 
