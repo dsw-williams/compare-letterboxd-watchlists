@@ -1,5 +1,6 @@
 'use client';
 import { useState, useEffect, useMemo } from 'react';
+import clsx from 'clsx';
 import { Friend, LetterboxdList, Movie } from '@/lib/types';
 import FriendSelector from '@/components/FriendSelector';
 import MovieGrid from '@/components/MovieGrid';
@@ -193,7 +194,7 @@ export default function HomePageClient({ initialFriends, initialLists }: HomePag
       </div>
 
       {/* Friends selector */}
-      <div className={lists.length > 0 ? 'mb-3' : 'mb-5'}>
+      <div className="mb-4">
         <FriendSelector
           friends={friends}
           selected={selected}
@@ -203,7 +204,7 @@ export default function HomePageClient({ initialFriends, initialLists }: HomePag
 
       {/* Lists selector */}
       {lists.length > 0 && (
-        <Card className="px-5 py-4 mb-5">
+        <Card className="px-5 py-4 mb-4">
           <div className="text-xs font-bold text-text-secondary uppercase tracking-[0.12em] mb-3">
             Lists
           </div>
@@ -228,7 +229,7 @@ export default function HomePageClient({ initialFriends, initialLists }: HomePag
 
       {/* Genre filter chips */}
       {genres.length > 1 && (
-        <div className="flex flex-nowrap overflow-x-auto gap-2 mb-6 sm:flex-wrap [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+        <div className="flex flex-nowrap overflow-x-auto gap-2 mb-4 sm:flex-wrap [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
           {genres.map((genre) => {
             const isAll = genre === 'All';
             const isActive = isAll ? activeGenres.length === 0 : activeGenres.includes(genre);
@@ -256,7 +257,7 @@ export default function HomePageClient({ initialFriends, initialLists }: HomePag
 
       {/* Sort + watched controls */}
       {(selected.length >= 1 || listMode) && (
-        <div className="flex items-center gap-2 mb-5 flex-wrap">
+        <div className="flex items-center gap-2 mb-4 flex-wrap">
           <PillButton
             isActive={sortOrder === 'rating_desc' || sortOrder === 'rating_asc'}
             onClick={() => setSortOrder((s) => s === 'rating_desc' ? 'rating_asc' : s === 'rating_asc' ? 'random' : 'rating_desc')}
@@ -278,14 +279,25 @@ export default function HomePageClient({ initialFriends, initialLists }: HomePag
           >
             <Shuffle size={16} />
           </IconButton>
-          <div className="w-px h-4 bg-border-subtle" />
-          <PillButton
-            isActive={fadeWatched}
-            onClick={() => setFadeWatched((f) => !f)}
-            className="px-3 py-[5px]"
-          >
-            Fade watched
-          </PillButton>
+          <div className="ml-auto flex items-center gap-2">
+            <span className="text-13 text-text-secondary">Fade watched</span>
+            <button
+              role="switch"
+              aria-checked={fadeWatched}
+              onClick={() => setFadeWatched((f) => !f)}
+              className={clsx(
+                'relative inline-flex h-[22px] w-[40px] shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 focus:outline-none',
+                fadeWatched ? 'bg-accent-green' : 'bg-border-strong'
+              )}
+            >
+              <span
+                className={clsx(
+                  'pointer-events-none inline-block h-[18px] w-[18px] rounded-full bg-white shadow transition-transform duration-200',
+                  fadeWatched ? 'translate-x-[18px]' : 'translate-x-0'
+                )}
+              />
+            </button>
+          </div>
         </div>
       )}
 
