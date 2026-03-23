@@ -1,6 +1,5 @@
 'use client';
 import { useState, useEffect, useMemo } from 'react';
-import clsx from 'clsx';
 import { Friend, LetterboxdList, Movie } from '@/lib/types';
 import FriendSelector from '@/components/FriendSelector';
 import MovieGrid from '@/components/MovieGrid';
@@ -20,12 +19,17 @@ interface HomePageClientProps {
   initialLists: LetterboxdList[];
 }
 
-function SectionLabel({ label }: { label: string }) {
+function SectionLabel({ label, count }: { label: string; count?: number }) {
   return (
-    <div className="mb-5 border-b border-border-subtle pb-[10px]">
+    <div className="mb-5 border-b border-border-subtle pb-[10px] flex items-center gap-2">
       <span className="text-xs font-bold text-text-secondary uppercase tracking-[0.12em]">
         {label}
       </span>
+      {count !== undefined && (
+        <span className="min-w-[18px] h-[18px] rounded-full bg-bg-card-hover flex items-center justify-center text-[10px] font-bold text-text-secondary px-1">
+          {count}
+        </span>
+      )}
     </div>
   );
 }
@@ -38,7 +42,7 @@ export default function HomePageClient({ initialFriends, initialLists }: HomePag
   const [overlap, setOverlap] = useState<OverlapEntry[]>([]);
   const [loading, setLoading] = useState(false);
   const [activeGenres, setActiveGenres] = useState<string[]>([]);
-  const [watchedFilter, setWatchedFilter] = useState<'show' | 'fade' | 'hide'>('fade');
+  const [fadeWatched, setFadeWatched] = useState(true);
   const [sortOrder, setSortOrder] = useState<'random' | 'rating_desc' | 'rating_asc' | 'runtime_desc' | 'runtime_asc'>('random');
   const [randomOrder, setRandomOrder] = useState<Map<string, number>>(new Map());
 
@@ -118,10 +122,6 @@ export default function HomePageClient({ initialFriends, initialLists }: HomePag
     );
   }
 
-  function selectAll() {
-    setSelected(friends.map((f) => f.username));
-  }
-
   function friendDisplayName(username: string): string {
     return friends.find((f) => f.username === username)?.custom_name ?? username;
   }
@@ -155,18 +155,6 @@ export default function HomePageClient({ initialFriends, initialLists }: HomePag
     return overlap.filter(({ movie }) => activeGenres.some((g) => movie.genres.includes(g)));
   }, [overlap, activeGenres]);
 
-  const sharedCount = filtered.filter(({ friends }) => friends.length >= 2).length;
-
-  const watchedCount = useMemo(() => {
-    if (selected.length === 0) return 0;
-    const slugs = new Set<string>();
-    for (const username of selected) {
-      const friend = friends.find((f) => f.username === username);
-      if (friend) for (const m of friend.watched) slugs.add(m.slug);
-    }
-    return filtered.filter(({ movie }) => slugs.has(movie.slug)).length;
-  }, [filtered, selected, friends]);
-
   // Sort items within a group
   function sortItems(items: OverlapEntry[]) {
     if (sortOrder === 'random') {
@@ -199,12 +187,9 @@ export default function HomePageClient({ initialFriends, initialLists }: HomePag
     <div className="max-w-[1400px] mx-auto px-6 py-8">
       {/* Page header */}
       <div className="mb-7">
-        <h1 className="text-[30px] font-bold text-text-primary mb-[6px] leading-[1.2]">
+        <h1 className="text-[30px] font-bold text-text-primary leading-[1.2]">
           Who&apos;s watching {timeOfDay}?
         </h1>
-        <p className="text-15 text-text-secondary">
-          Select friends to compare watchlists.
-        </p>
       </div>
 
       {/* Friends selector */}
@@ -213,7 +198,6 @@ export default function HomePageClient({ initialFriends, initialLists }: HomePag
           friends={friends}
           selected={selected}
           onToggle={toggleFriend}
-          onSelectAll={selectAll}
         />
       </div>
 
@@ -270,79 +254,38 @@ export default function HomePageClient({ initialFriends, initialLists }: HomePag
         </div>
       )}
 
-      {/* Results header */}
+      {/* Sort + watched controls */}
       {(selected.length >= 1 || listMode) && (
-        <div className="flex flex-col gap-3 mb-5 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-center gap-3">
-            <span className="text-17 font-bold text-text-primary">
-              {filtered.length} films
-            </span>
-            {!listMode && selected.length >= 2 && (
-              <span className="text-15 text-accent-green font-semibold">
-                {sharedCount} shared
-              </span>
-            )}
-            {listMode && selected.length >= 1 && (
-              <span className="text-15 text-accent-green font-semibold">
-                {filtered.filter(({ friends }) => friends.length >= 1).length} to watch
-              </span>
-            )}
-            {selected.length >= 1 && (
-              <span className="text-15 text-text-secondary font-semibold">
-                {watchedCount} watched
-              </span>
-            )}
-          </div>
-
-          {/* Sort + Fade watched controls */}
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-4">
-            {/* Sort pills */}
-            <div className="flex items-center gap-2">
-              <PillButton
-                isActive={sortOrder === 'rating_desc' || sortOrder === 'rating_asc'}
-                onClick={() => setSortOrder((s) => s === 'rating_desc' ? 'rating_asc' : s === 'rating_asc' ? 'random' : 'rating_desc')}
-                className="px-3 py-[5px]"
-              >
-                {sortOrder === 'rating_desc' ? 'Rating ↓' : sortOrder === 'rating_asc' ? 'Rating ↑' : 'Rating'}
-              </PillButton>
-              <PillButton
-                isActive={sortOrder === 'runtime_desc' || sortOrder === 'runtime_asc'}
-                onClick={() => setSortOrder((s) => s === 'runtime_desc' ? 'runtime_asc' : s === 'runtime_asc' ? 'random' : 'runtime_desc')}
-                className="px-3 py-[5px]"
-              >
-                {sortOrder === 'runtime_desc' ? 'Runtime ↓' : sortOrder === 'runtime_asc' ? 'Runtime ↑' : 'Runtime'}
-              </PillButton>
-              <IconButton
-                onClick={reshuffleOrder}
-                title="Shuffle"
-                className={sortOrder === 'random' ? 'text-text-primary' : 'text-text-secondary hover:text-text-primary'}
-              >
-                <Shuffle size={16} />
-              </IconButton>
-            </div>
-            {/* Divider — desktop only */}
-            <div className="hidden sm:block w-px h-4 bg-border-subtle" />
-            {/* Watched filter */}
-            <div className="flex rounded-full border border-border-subtle overflow-hidden self-start">
-              {(['show', 'fade', 'hide'] as const).map((val, i) => {
-                const isActive = watchedFilter === val;
-                const label = val === 'show' ? 'All' : val === 'fade' ? 'Fade watched' : 'Hide watched';
-                return (
-                  <button
-                    key={val}
-                    onClick={() => setWatchedFilter(val)}
-                    className={clsx(
-                      'px-3 py-[5px] text-13 cursor-pointer border-none whitespace-nowrap transition-[background-color,color] duration-150',
-                      isActive ? 'font-semibold bg-accent-green text-text-primary' : 'font-normal bg-transparent text-text-secondary',
-                      i > 0 && 'border-l border-border-subtle'
-                    )}
-                  >
-                    {label}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
+        <div className="flex items-center gap-2 mb-5 flex-wrap">
+          <PillButton
+            isActive={sortOrder === 'rating_desc' || sortOrder === 'rating_asc'}
+            onClick={() => setSortOrder((s) => s === 'rating_desc' ? 'rating_asc' : s === 'rating_asc' ? 'random' : 'rating_desc')}
+            className="px-3 py-[5px]"
+          >
+            {sortOrder === 'rating_desc' ? 'Rating ↓' : sortOrder === 'rating_asc' ? 'Rating ↑' : 'Rating'}
+          </PillButton>
+          <PillButton
+            isActive={sortOrder === 'runtime_desc' || sortOrder === 'runtime_asc'}
+            onClick={() => setSortOrder((s) => s === 'runtime_desc' ? 'runtime_asc' : s === 'runtime_asc' ? 'random' : 'runtime_desc')}
+            className="px-3 py-[5px]"
+          >
+            {sortOrder === 'runtime_desc' ? 'Length ↓' : sortOrder === 'runtime_asc' ? 'Length ↑' : 'Length'}
+          </PillButton>
+          <IconButton
+            onClick={reshuffleOrder}
+            title="Shuffle"
+            className={sortOrder === 'random' ? 'text-text-primary' : 'text-text-secondary hover:text-text-primary'}
+          >
+            <Shuffle size={16} />
+          </IconButton>
+          <div className="w-px h-4 bg-border-subtle" />
+          <PillButton
+            isActive={fadeWatched}
+            onClick={() => setFadeWatched((f) => !f)}
+            className="px-3 py-[5px]"
+          >
+            Fade watched
+          </PillButton>
         </div>
       )}
 
@@ -356,24 +299,27 @@ export default function HomePageClient({ initialFriends, initialLists }: HomePag
       {/* Movie grid — single friend (no list mode): one flat section */}
       {!loading && !listMode && selected.length === 1 && (
         <>
-          <SectionLabel label={`${friendDisplayName(selected[0])}'s watchlist`} />
-          <MovieGrid items={sortItems(filtered)} totalSelected={1} allFriends={friends} selectedFriends={selected} watchedFilter={watchedFilter} favMap={favMap} />
+          <SectionLabel label={`${friendDisplayName(selected[0])}'s watchlist`} count={sortItems(filtered).length} />
+          <MovieGrid items={sortItems(filtered)} totalSelected={1} allFriends={friends} selectedFriends={selected} fadeWatched={fadeWatched} favMap={favMap} />
         </>
       )}
 
       {/* Movie grid — list mode or multiple friends: grouped by overlap count */}
       {!loading && groupedByCount && groupedByCount.map(({ count, items }) => (
         <div key={count} className="mb-8">
-          <SectionLabel label={
-            count === 0
-              ? 'On no watchlists'
-              : count === selected.length
-              ? `On all ${selected.length} watchlists`
-              : count >= 2
-              ? `On ${count} of ${selected.length} watchlists`
-              : 'On 1 watchlist'
-          } />
-          <MovieGrid items={sortItems(items)} totalSelected={selected.length} allFriends={friends} selectedFriends={selected} watchedFilter={watchedFilter} favMap={favMap} />
+          <SectionLabel
+            label={
+              count === 0
+                ? 'On no watchlists'
+                : count === selected.length
+                ? `On all ${selected.length} watchlists`
+                : count >= 2
+                ? `On ${count} of ${selected.length} watchlists`
+                : 'On 1 watchlist'
+            }
+            count={sortItems(items).length}
+          />
+          <MovieGrid items={sortItems(items)} totalSelected={selected.length} allFriends={friends} selectedFriends={selected} fadeWatched={fadeWatched} favMap={favMap} />
         </div>
       ))}
 

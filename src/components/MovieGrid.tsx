@@ -11,13 +11,13 @@ interface MovieGridProps {
   totalSelected: number;
   allFriends: Friend[];
   selectedFriends: string[];
-  watchedFilter: 'show' | 'fade' | 'hide';
+  fadeWatched: boolean;
   favMap: Map<string, string[]>;
 }
 
-export default function MovieGrid({ items, totalSelected, allFriends, selectedFriends, watchedFilter, favMap }: MovieGridProps) {
+export default function MovieGrid({ items, totalSelected, allFriends, selectedFriends, fadeWatched, favMap }: MovieGridProps) {
   const watchedSlugs = new Set<string>();
-  if (watchedFilter !== 'show') {
+  if (fadeWatched) {
     for (const friend of allFriends) {
       if (selectedFriends.includes(friend.username)) {
         for (const m of friend.watched) watchedSlugs.add(m.slug);
@@ -25,7 +25,7 @@ export default function MovieGrid({ items, totalSelected, allFriends, selectedFr
     }
   }
 
-  const displayItems = watchedFilter === 'hide' ? items.filter(({ movie }) => !watchedSlugs.has(movie.slug)) : items;
+  const displayItems = items;
 
   if (displayItems.length === 0) {
     return (
@@ -47,7 +47,7 @@ export default function MovieGrid({ items, totalSelected, allFriends, selectedFr
           friends={friends}
           totalSelected={totalSelected}
           allFriends={allFriends}
-          faded={watchedFilter === 'fade' && watchedSlugs.has(movie.slug)}
+          faded={fadeWatched && watchedSlugs.has(movie.slug)}
           favouritedBy={favMap.get(movie.slug) ?? []}
         />
       ))}

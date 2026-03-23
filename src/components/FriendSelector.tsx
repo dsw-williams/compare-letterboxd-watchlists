@@ -9,10 +9,9 @@ interface FriendSelectorProps {
   friends: Friend[];
   selected: string[];
   onToggle: (username: string) => void;
-  onSelectAll: () => void;
 }
 
-export default function FriendSelector({ friends, selected, onToggle, onSelectAll }: FriendSelectorProps) {
+export default function FriendSelector({ friends, selected, onToggle }: FriendSelectorProps) {
   if (friends.length === 0) {
     return (
       <Card className="p-5 text-center text-text-tertiary text-sm">
@@ -26,16 +25,10 @@ export default function FriendSelector({ friends, selected, onToggle, onSelectAl
 
   return (
     <Card className="p-5">
-      <div className="flex justify-between items-center mb-[18px]">
+      <div className="mb-[18px]">
         <span className="text-xs font-bold text-text-secondary uppercase tracking-[0.12em]">
           Friends
         </span>
-        <button
-          onClick={onSelectAll}
-          className="text-sm text-accent-green bg-transparent border-none cursor-pointer p-0"
-        >
-          Select all
-        </button>
       </div>
 
       <div className="grid grid-cols-4 gap-x-2 gap-y-4 sm:flex sm:flex-wrap sm:gap-5">
