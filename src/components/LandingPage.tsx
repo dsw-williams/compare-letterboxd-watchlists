@@ -12,14 +12,6 @@ interface PosterMovie {
   poster_url: string;
 }
 
-interface BackdropData {
-  title: string;
-  year: string;
-  director: string | null;
-  backdrop_url: string | null;
-  poster_movies: PosterMovie[];
-}
-
 async function streamImport(
   endpoint: string,
   body: object,
@@ -94,19 +86,9 @@ export default function LandingPage() {
   const [friendInput, setFriendInput] = useState('');
   const [friendsList, setFriendsList] = useState<string[]>([]);
   const [selectedDefaults, setSelectedDefaults] = useState<string[]>([]);
-  const [backdrop, setBackdrop] = useState<BackdropData | null>(null);
-
-  useEffect(() => {
-    const shuffled = [...landingMovies].sort(() => Math.random() - 0.5);
-    const [hero, ...rest] = shuffled;
-    setBackdrop({
-      title: hero.title,
-      year: hero.year,
-      director: hero.director,
-      backdrop_url: hero.backdrop_url,
-      poster_movies: rest.map((m, i) => ({ id: i, poster_url: m.poster_url })),
-    });
-  }, []);
+  const [posterMovies] = useState<PosterMovie[]>(() =>
+    [...landingMovies].sort(() => Math.random() - 0.5).map((m, i) => ({ id: i, poster_url: m.poster_url }))
+  );
   const [importStatus, setImportStatus] = useState('');
   const [importProgress, setImportProgress] = useState({ done: 0, total: 0 });
   const [importDone, setImportDone] = useState(false);
@@ -171,41 +153,11 @@ export default function LandingPage() {
     ? `${friendsList.length} friend${friendsList.length > 1 ? 's' : ''} added`
     : 'None added';
 
-  const filmCredit = backdrop?.backdrop_url
-    ? [backdrop.title, backdrop.year ? `(${backdrop.year})` : '', backdrop.director ? `· dir. ${backdrop.director}` : '']
-        .filter(Boolean).join(' ')
-    : null;
-
-  const posterMovies = backdrop?.poster_movies ?? [];
-
   return (
-    <div className="min-h-screen bg-bg-primary relative overflow-hidden flex flex-col">
-
-      {/* ── Backdrop (absolute, constrained to same width as poster grid) ── */}
-      {backdrop?.backdrop_url && (
-        <div className="absolute inset-0 bg-bg-primary">
-          <div className="max-w-[1400px] mx-auto h-full relative overflow-hidden">
-            <Image
-              src={backdrop.backdrop_url}
-              alt=""
-              fill
-              unoptimized
-              priority
-              sizes="100vw"
-              className="object-cover object-top"
-            />
-            {/* Bottom-to-top fade — eased */}
-            <div className="absolute inset-0" style={{ background: 'linear-gradient(to top, #141414 0%, #141414e6 15%, #141414b3 35%, #14141466 55%, #14141426 75%, transparent 100%)' }} />
-            {/* Left edge fade — eased */}
-            <div className="absolute inset-y-0 left-0 w-64" style={{ background: 'linear-gradient(to right, #141414 0%, #141414d9 20%, #14141499 50%, #14141433 75%, transparent 100%)' }} />
-            {/* Right edge fade — eased */}
-            <div className="absolute inset-y-0 right-0 w-64" style={{ background: 'linear-gradient(to left, #141414 0%, #141414d9 20%, #14141499 50%, #14141433 75%, transparent 100%)' }} />
-          </div>
-        </div>
-      )}
+    <div className="h-[calc(100vh-72px)] relative overflow-hidden flex flex-col">
 
       {/* ── All content above backdrop ─────────────────────── */}
-      <div className="relative z-10 flex flex-col flex-1 min-h-screen">
+      <div className="relative z-10 flex flex-col flex-1">
 
         {/* ── Form area ────────────────────────────────────── */}
         <div className="flex-1 flex flex-col items-center justify-center px-5 pt-12 pb-4 gap-4">
@@ -261,12 +213,6 @@ export default function LandingPage() {
                 </button>
               </div>
 
-              {/* Film credit */}
-              {filmCredit && (
-                <p className="text-[11px] text-white/40 select-none text-center mt-4">
-                  {filmCredit}
-                </p>
-              )}
             </div>
           )}
 

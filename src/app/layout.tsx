@@ -49,7 +49,7 @@ export async function generateMetadata(): Promise<Metadata> {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" className={`${inter.variable} ${playfair.variable}`}>
-      <body style={{ backgroundColor: '#141414', minHeight: '100vh' }}>
+      <body className="min-h-screen">
         <Nav />
         <main>{children}</main>
       </body>

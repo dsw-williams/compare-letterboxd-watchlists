@@ -10,7 +10,6 @@ interface LandingMovie {
   title: string;
   year: string;
   director: string;
-  backdrop_url: string;
   poster_url: string;
 }
 
@@ -25,12 +24,10 @@ interface ImageData {
   title: string;
   year: string;
   director: string | null;
-  backdrops: string[];
   posters: string[];
 }
 
 const THUMB_POSTER = 'https://image.tmdb.org/t/p/w185';
-const THUMB_BACKDROP = 'https://image.tmdb.org/t/p/w300';
 const FULL = 'https://image.tmdb.org/t/p/original';
 
 export default function LandingMoviesEditor() {
@@ -40,10 +37,10 @@ export default function LandingMoviesEditor() {
   const [results, setResults] = useState<SearchResult[]>([]);
   const [imageData, setImageData] = useState<ImageData | null>(null);
   const [loadingImages, setLoadingImages] = useState(false);
-  const [selectedBackdrop, setSelectedBackdrop] = useState<string | null>(null);
   const [selectedPoster, setSelectedPoster] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saved'>('idle');
+
 
   useEffect(() => {
     fetch('/api/dev/landing-movies')
@@ -57,7 +54,6 @@ export default function LandingMoviesEditor() {
     setSearching(true);
     setResults([]);
     setImageData(null);
-    setSelectedBackdrop(null);
     setSelectedPoster(null);
     try {
       const r = await fetch(`/api/dev/tmdb/search?q=${encodeURIComponent(query)}`);
@@ -70,7 +66,6 @@ export default function LandingMoviesEditor() {
   async function selectMovie(result: SearchResult) {
     setLoadingImages(true);
     setImageData(null);
-    setSelectedBackdrop(null);
     setSelectedPoster(null);
     try {
       const r = await fetch(`/api/dev/tmdb/images?id=${result.id}`);
@@ -81,12 +76,11 @@ export default function LandingMoviesEditor() {
   }
 
   async function addToList() {
-    if (!imageData || !selectedBackdrop || !selectedPoster) return;
+    if (!imageData || !selectedPoster) return;
     const entry: LandingMovie = {
       title: imageData.title,
       year: imageData.year,
       director: imageData.director ?? '',
-      backdrop_url: `${FULL}${selectedBackdrop}`,
       poster_url: `${FULL}${selectedPoster}`,
     };
     const updated = [...movies, entry];
@@ -101,7 +95,6 @@ export default function LandingMoviesEditor() {
       setQuery('');
       setResults([]);
       setImageData(null);
-      setSelectedBackdrop(null);
       setSelectedPoster(null);
       setSaveStatus('saved');
       setTimeout(() => setSaveStatus('idle'), 2000);
@@ -120,7 +113,7 @@ export default function LandingMoviesEditor() {
     setMovies(updated);
   }
 
-  const canAdd = !!imageData && !!selectedBackdrop && !!selectedPoster;
+  const canAdd = !!imageData && !!selectedPoster;
 
   return (
     <div className="flex flex-col gap-8">
@@ -211,29 +204,6 @@ export default function LandingMoviesEditor() {
           <p className="text-xs font-bold text-text-secondary uppercase tracking-[0.1em] mb-1">
             {imageData.title} ({imageData.year}){imageData.director ? ` · dir. ${imageData.director}` : ''}
           </p>
-
-          {/* Backdrops */}
-          <p className="text-xs text-text-tertiary mb-2 mt-4">Select backdrop</p>
-          <div className="flex gap-2 overflow-x-auto pb-2 mb-4">
-            {imageData.backdrops.map((path) => (
-              <button
-                key={path}
-                onClick={() => setSelectedBackdrop(path)}
-                className={`shrink-0 rounded-lg overflow-hidden border-2 transition-colors ${selectedBackdrop === path ? 'border-accent-green' : 'border-transparent'}`}
-                style={{ width: 213, height: 120 }}
-              >
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={`${THUMB_BACKDROP}${path}`}
-                  alt=""
-                  className="w-full h-full object-cover"
-                />
-              </button>
-            ))}
-            {imageData.backdrops.length === 0 && (
-              <p className="text-xs text-text-tertiary">No backdrops available.</p>
-            )}
-          </div>
 
           {/* Posters */}
           <p className="text-xs text-text-tertiary mb-2">Select poster</p>

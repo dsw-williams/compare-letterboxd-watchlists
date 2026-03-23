@@ -4,20 +4,20 @@ const BACKDROP_URL = 'https://image.tmdb.org/t/p/original/ywSZYk8D8kOt572L6k2SBD
 
 export default function NotFound() {
   return (
-    <div className="min-h-screen bg-bg-primary relative overflow-hidden flex flex-col items-center justify-center">
+    <div className="h-[calc(100vh-72px)] bg-bg-primary relative overflow-hidden flex flex-col items-center justify-center">
 
       {/* ── Backdrop ─────────────────────────────────────── */}
       <div className="absolute inset-0 bg-bg-primary">
-        <div className="max-w-[1400px] mx-auto h-full relative overflow-hidden">
+        <div className="absolute inset-0">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={BACKDROP_URL}
             alt=""
             className="w-full h-full object-cover object-center"
           />
-          <div className="absolute inset-0" style={{ background: 'linear-gradient(to top, #141414 0%, #141414e6 15%, #141414b3 35%, #14141466 55%, #14141426 75%, transparent 100%)' }} />
-          <div className="absolute inset-y-0 left-0 w-64" style={{ background: 'linear-gradient(to right, #141414 0%, #141414d9 20%, #14141499 50%, #14141433 75%, transparent 100%)' }} />
-          <div className="absolute inset-y-0 right-0 w-64" style={{ background: 'linear-gradient(to left, #141414 0%, #141414d9 20%, #14141499 50%, #14141433 75%, transparent 100%)' }} />
+          <div className="absolute inset-0" style={{ background: 'linear-gradient(to top, #14181c 0%, #14181ce6 15%, #14181cb3 35%, #14181c66 55%, #14181c26 75%, transparent 100%)' }} />
+          <div className="absolute inset-y-0 left-0 w-64" style={{ background: 'linear-gradient(to right, #14181c 0%, #14181cd9 20%, #14181c99 50%, #14181c33 75%, transparent 100%)' }} />
+          <div className="absolute inset-y-0 right-0 w-64" style={{ background: 'linear-gradient(to left, #14181c 0%, #14181cd9 20%, #14181c99 50%, #14181c33 75%, transparent 100%)' }} />
         </div>
       </div>
 

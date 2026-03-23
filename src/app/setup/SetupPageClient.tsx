@@ -46,19 +46,9 @@ export default function SetupPageClient({ env }: Props) {
 
   return (
     <div
-      className="min-h-screen bg-bg-primary flex flex-col items-center justify-center px-5 py-16"
+      className="min-h-[calc(100vh-72px)] flex flex-col items-center justify-center px-5 py-16"
       style={{ animation: 'fadeUp 0.45s ease-out both' }}
     >
-      {/* Logo bar */}
-      <div className="flex items-center gap-2.5 mb-12">
-        <div className="w-8 h-8 bg-accent-green rounded-[6px] flex items-center justify-center shrink-0">
-          <span className="text-lg leading-none">🎬</span>
-        </div>
-        <span className="text-text-primary font-black text-lg tracking-[0.06em] uppercase">
-          Watchlist
-        </span>
-      </div>
-
       {/* Instructions card */}
       <div className="w-full max-w-lg bg-bg-card border border-border-subtle rounded-2xl p-8">
         <p className="text-xs font-bold text-accent-green uppercase tracking-[0.12em] mb-3">

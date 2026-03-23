@@ -9,8 +9,8 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        'bg-primary': '#141414',
-        'bg-card': '#1e2128',
+        'bg-primary': '#14181c',
+        'bg-card': '#1e2530',
         'bg-card-hover': '#252830',
         'bg-input': '#0d0f12',
         'bg-danger': '#2d1515',

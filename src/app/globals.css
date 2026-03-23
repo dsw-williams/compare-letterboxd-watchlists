@@ -3,7 +3,7 @@
 @tailwind utilities;
 
 :root {
-  --bg-primary: #141414;
+  --bg-primary: #14181c;
   --bg-card: #1e2128;
   --bg-card-hover: #252830;
   --border: #2a2d35;
@@ -16,8 +16,18 @@
   --star-yellow: #f59e0b;
 }
 
-html, body {
-  background-color: #141414;
+html {
+  background-color: #14181c;
+}
+
+body {
+  background-color: #14181c;
+  background-image:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E"),
+    linear-gradient(to bottom, #1f2d3d 0%, transparent 380px);
+  background-attachment: fixed, scroll;
+  background-repeat: repeat, no-repeat;
+  background-size: 200px 200px, 100%;
   color: #ffffff;
   font-family: var(--font-body), 'Graphik', system-ui, sans-serif;
   font-size: 15px;
@@ -34,7 +44,7 @@ html, body {
   width: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: #141414;
+  background: #14181c;
 }
 ::-webkit-scrollbar-thumb {
   background: #2a2d35;
