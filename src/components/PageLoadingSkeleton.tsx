@@ -1,16 +1,9 @@
-import Nav from '@/components/Nav';
-
 interface Props {
   variant: 'home' | 'settings';
 }
 
 export default function PageLoadingSkeleton({ variant }: Props) {
-  return (
-    <>
-      <Nav />
-      {variant === 'home' ? <HomeSkeleton /> : <SettingsSkeleton />}
-    </>
-  );
+  return variant === 'home' ? <HomeSkeleton /> : <SettingsSkeleton />;
 }
 
 function HomeSkeleton() {

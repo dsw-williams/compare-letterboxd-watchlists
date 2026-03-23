@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from 'next';
 import { Inter, Playfair_Display } from 'next/font/google';
 import { headers } from 'next/headers';
+import Nav from '@/components/Nav';
 import './globals.css';
 
 const inter = Inter({
@@ -49,6 +50,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" className={`${inter.variable} ${playfair.variable}`}>
       <body style={{ backgroundColor: '#141414', minHeight: '100vh' }}>
+        <Nav />
         <main>{children}</main>
       </body>
     </html>

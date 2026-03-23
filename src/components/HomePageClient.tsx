@@ -8,7 +8,6 @@ import Card from '@/components/ui/Card';
 import PillButton from '@/components/ui/PillButton';
 import IconButton from '@/components/ui/IconButton';
 import { Shuffle } from 'lucide-react';
-import Nav from '@/components/Nav';
 
 interface OverlapEntry {
   movie: Movie;
@@ -183,8 +182,6 @@ export default function HomePageClient({ initialFriends, initialLists }: HomePag
   const timeOfDay = hour < 12 ? 'this morning' : hour < 17 ? 'this afternoon' : hour < 20 ? 'this evening' : 'tonight';
 
   return (
-    <>
-    <Nav />
     <div className="max-w-[1400px] mx-auto px-6 py-8">
       {/* Page header */}
       <div className="mb-7">
@@ -342,6 +339,5 @@ export default function HomePageClient({ initialFriends, initialLists }: HomePag
         </div>
       )}
     </div>
-    </>
   );
 }

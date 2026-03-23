@@ -9,7 +9,6 @@ import { useImportStream } from '@/hooks/useImportStream';
 import Card from '@/components/ui/Card';
 import PrimaryButton from '@/components/ui/PrimaryButton';
 import InputField from '@/components/ui/InputField';
-import Nav from '@/components/Nav';
 
 interface SettingsPageClientProps {
   initialFriends: Friend[];
@@ -142,8 +141,6 @@ export default function SettingsPageClient({ initialFriends, initialLists }: Set
   }
 
   return (
-    <>
-    <Nav />
     <div className="max-w-[600px] mx-auto px-4 py-10">
       <h1 className="text-center text-26 font-bold text-text-primary mb-9">
         Settings
@@ -305,6 +302,5 @@ export default function SettingsPageClient({ initialFriends, initialLists }: Set
       </div>
 
     </div>
-    </>
   );
 }
