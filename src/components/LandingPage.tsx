@@ -40,6 +40,24 @@ async function streamImport(
   } catch { /* silently continue */ }
 }
 
+function PosterCard({ src }: { src: string }) {
+  const [loaded, setLoaded] = useState(false);
+  return (
+    <div className="aspect-[2/3] rounded-lg overflow-hidden bg-bg-card relative">
+      {!loaded && <div className="absolute inset-0 bg-bg-card-hover animate-pulse" />}
+      <Image
+        src={src}
+        alt=""
+        fill
+        unoptimized
+        sizes="(max-width: 640px) 25vw, 160px"
+        className="object-cover"
+        onLoad={() => setLoaded(true)}
+      />
+    </div>
+  );
+}
+
 type Step = 'hero' | 'friends' | 'lists' | 'importing';
 
 // ── Collapsed summary card ────────────────────────────────
@@ -171,9 +189,10 @@ export default function LandingPage() {
               src={backdrop.backdrop_url}
               alt=""
               fill
+              unoptimized
+              priority
               sizes="100vw"
               className="object-cover object-top"
-              priority={false}
             />
             {/* Bottom-to-top fade — eased */}
             <div className="absolute inset-0" style={{ background: 'linear-gradient(to top, #141414 0%, #141414e6 15%, #141414b3 35%, #14141466 55%, #14141426 75%, transparent 100%)' }} />
@@ -434,15 +453,7 @@ export default function LandingPage() {
               style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))' }}
             >
               {posterMovies.map((m) => (
-                <div key={m.id} className="aspect-[2/3] rounded-lg overflow-hidden bg-bg-card relative">
-                  <Image
-                    src={m.poster_url}
-                    alt=""
-                    fill
-                    sizes="(max-width: 640px) 25vw, 160px"
-                    className="object-cover"
-                  />
-                </div>
+                <PosterCard key={m.id} src={m.poster_url} />
               ))}
             </div>
             </div>
