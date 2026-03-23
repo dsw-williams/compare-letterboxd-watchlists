@@ -244,7 +244,7 @@ export default function HomePageClient({ initialFriends, initialLists }: HomePag
 
       {/* Genre filter chips */}
       {genres.length > 1 && (
-        <div className="flex flex-wrap gap-2 mb-6">
+        <div className="flex flex-nowrap overflow-x-auto gap-2 mb-6 sm:flex-wrap [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
           {genres.map((genre) => {
             const isAll = genre === 'All';
             const isActive = isAll ? activeGenres.length === 0 : activeGenres.includes(genre);
@@ -261,7 +261,7 @@ export default function HomePageClient({ initialFriends, initialLists }: HomePag
                     );
                   }
                 }}
-                className="px-[14px] py-[5px] leading-[1.4]"
+                className="shrink-0 px-[14px] py-[5px] leading-[1.4]"
               >
                 {genre}
               </PillButton>
