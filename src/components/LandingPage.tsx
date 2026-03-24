@@ -41,7 +41,6 @@ function PosterCard({ src }: { src: string }) {
         src={src}
         alt=""
         fill
-        unoptimized
         sizes="(max-width: 640px) 25vw, 160px"
         className="object-cover"
         onLoad={() => setLoaded(true)}

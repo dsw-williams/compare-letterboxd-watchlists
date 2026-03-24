@@ -7,6 +7,7 @@ const nextConfig = {
       { protocol: 'https', hostname: 'a.ltrbxd.com' },
       { protocol: 'https', hostname: 'secure.gravatar.com' },
     ],
+    imageSizes: [16, 32, 48, 64, 96, 128, 160, 256, 320, 384],
   },
 };
 

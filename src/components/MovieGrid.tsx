@@ -40,7 +40,7 @@ export default function MovieGrid({ items, totalSelected, allFriends, selectedFr
       className="grid gap-3"
       style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))' }}
     >
-      {displayItems.map(({ movie, friends }) => (
+      {displayItems.map(({ movie, friends }, index) => (
         <MovieCard
           key={movie.slug}
           movie={movie}
@@ -49,6 +49,7 @@ export default function MovieGrid({ items, totalSelected, allFriends, selectedFr
           allFriends={allFriends}
           faded={fadeWatched && watchedSlugs.has(movie.slug)}
           favouritedBy={favMap.get(movie.slug) ?? []}
+          priority={index < 12}
         />
       ))}
     </div>

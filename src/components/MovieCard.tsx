@@ -11,6 +11,7 @@ interface MovieCardProps {
   allFriends: Friend[];
   faded?: boolean;
   favouritedBy?: string[]; // usernames whose top-4 this movie is in
+  priority?: boolean;
 }
 
 function starsFromRating(rating: number | null): string {
@@ -26,7 +27,7 @@ function favouriteLabel(usernames: string[]): string {
   return `${usernames[0]} +${usernames.length - 1}'s favourite`;
 }
 
-export default function MovieCard({ movie, friends, totalSelected, allFriends, faded, favouritedBy = [] }: MovieCardProps) {
+export default function MovieCard({ movie, friends, totalSelected, allFriends, faded, favouritedBy = [], priority = false }: MovieCardProps) {
   const [posterLoaded, setPosterLoaded] = useState(false);
   const friendData = allFriends.filter((f) => friends.includes(f.username));
   const isFavourite = favouritedBy.length > 0;
@@ -43,6 +44,7 @@ export default function MovieCard({ movie, friends, totalSelected, allFriends, f
       rel="noopener noreferrer"
       className={clsx(
         'block cursor-pointer transition-[opacity,transform] duration-150 [@media(hover:hover)]:hover:scale-[1.03]',
+        '[content-visibility:auto] [contain-intrinsic-size:auto_300px]',
         faded && 'opacity-40'
       )}
     >
@@ -62,9 +64,9 @@ export default function MovieCard({ movie, friends, totalSelected, allFriends, f
             src={movie.poster_url}
             alt={movie.title}
             fill
-            unoptimized
             sizes="(max-width: 640px) 25vw, (max-width: 1400px) 15vw, 200px"
             className="object-cover"
+            priority={priority}
             onLoad={() => setPosterLoaded(true)}
           />
         ) : (
@@ -91,7 +93,6 @@ export default function MovieCard({ movie, friends, totalSelected, allFriends, f
                   title={f.username}
                   width={22}
                   height={22}
-                  unoptimized
                   className="rounded-full border-[1.5px] border-bg-primary object-cover block"
                 />
               ) : (
